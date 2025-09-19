@@ -67,9 +67,14 @@
   }
 }
 
-/* Default screen styles: hide the report template */
+/* --- PRINT STYLES --- */
+
+/* By default, hide the print-only content visually but keep it accessible to the DOM */
 #print-content {
-  display: none;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  position: absolute;
 }
 
 @media print {
@@ -85,10 +90,11 @@
   
   /* Show and format the report content for printing */
   #print-content {
+    visibility: visible;
     display: block;
     position: static;
-    width: auto;
     height: auto;
     overflow: visible;
+    width: 100%;
   }
 }
