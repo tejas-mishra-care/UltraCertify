@@ -21,7 +21,6 @@ import {
   Building2,
   Layers,
   Trees,
-  FileText
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -430,7 +429,7 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div id="print-content">
+      <div id="print-content" className="hidden print:block">
         <ReportTemplate
           projectData={projectData}
           files={uploadedFiles}
