@@ -174,7 +174,8 @@ const UltraCertifyPage: FC = () => {
       title: "Generating Report",
       description: "Your report is being prepared. The print dialog will open shortly.",
     });
-
+    
+    // Use a short timeout to allow the toast to render before the blocking print dialog opens.
     setTimeout(() => {
       window.print();
     }, 500);

@@ -67,14 +67,9 @@
   }
 }
 
-/* Default screen styles */
+/* Default screen styles: hide the report template */
 #print-content {
-  position: absolute;
-  left: -9999px; /* Move it off-screen instead of hiding */
-  top: auto;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+  display: none;
 }
 
 @media print {
@@ -83,15 +78,15 @@
     font-size: 10pt;
   }
   
-  /* Hide the main application content when printing */
+  /* Hide the main application UI when printing */
   #main-content {
     display: none;
   }
   
-  /* Show the report content when printing */
+  /* Show and format the report content for printing */
   #print-content {
     display: block;
-    position: static; /* Reset position for printing */
+    position: static;
     width: auto;
     height: auto;
     overflow: visible;
