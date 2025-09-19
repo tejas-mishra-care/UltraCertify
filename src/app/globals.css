@@ -72,9 +72,13 @@
     background: white;
     font-size: 10pt;
   }
+  
+  /* Hide the main application content when printing */
   #main-content {
     display: none;
   }
+  
+  /* Show the report content when printing */
   #print-content {
     display: block;
     position: absolute;
