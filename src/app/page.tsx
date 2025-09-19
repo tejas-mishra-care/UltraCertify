@@ -191,8 +191,9 @@ const UltraCertifyPage: FC = () => {
       description: "Your report is being prepared. The print dialog will open shortly.",
     });
 
-    // The CSS media query will handle showing the right content.
-    window.print();
+    setTimeout(() => {
+        window.print();
+    }, 500);
   };
 
   const visibleCriteria = useMemo(() => {
@@ -201,7 +202,7 @@ const UltraCertifyPage: FC = () => {
 
   return (
     <>
-      <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
+      <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8 print:hidden">
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -444,7 +445,7 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div id="print-content" className="hidden print:block">
+      <div id="print-content" className="hidden print:block p-8">
         <ReportTemplate
           projectData={projectData}
           files={uploadedFiles}

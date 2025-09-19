@@ -69,17 +69,17 @@
 
 @media print {
   body {
-    visibility: hidden;
-  }
-  #print-content {
-    visibility: visible;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
+    background: white;
+    font-size: 10pt;
   }
   #main-content {
     display: none;
+  }
+  #print-content {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
   }
 }
