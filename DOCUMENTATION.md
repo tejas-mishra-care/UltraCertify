@@ -46,12 +46,19 @@ UltraCertify is a web application designed to help users manage and track their 
 ### e. PDF Report Generation
 
 - **Location:** "Actions" card in the right-hand sidebar.
-- **Functionality:** The "Generate PDF Report" button creates a comprehensive, print-friendly summary of the project.
+- **Functionality:** The "Generate PDF Report" button creates a comprehensive, print-friendly summary of the project. The report is generated with whatever information is currently in the form, regardless of whether it's complete.
 - **How it Works:**
-    - This feature uses the browser's native **Print to PDF** functionality, which is the most reliable method for web-based PDF generation.
-    - When the button is clicked, a toast notification appears to confirm the action. Then, the browser's print dialog is triggered.
-    - Special CSS rules (`@media print`) in `src/app/globals.css` ensure that when the print dialog is active, the main application UI is hidden, and only the formatted report is visible.
-    - The user can then select "Save as PDF" from the print dialog options to download the report to their computer. The report is generated based on whatever information is currently in the form, regardless of whether it's complete.
+    - This feature uses the browser's native **Print to PDF** functionality, which is the most reliable method for web-based PDF generation. It works across all modern desktop and mobile browsers without needing external libraries.
+    - When the button is clicked, a toast notification appears to confirm the action. Then, the browser's print dialog is triggered by the `window.print()` command.
+    - Special CSS rules (`@media print`) in `src/app/globals.css` ensure that when the print dialog is active, the main application UI (forms, buttons, sidebars) is hidden, and only the formatted report is visible.
+    - The user can then select "Save as PDF" from the print dialog options to download the report to their computer.
+
+- **What the Generated PDF Includes:**
+    - A professional header with the project title.
+    - A complete grid of all project information entered by the user.
+    - A summary of the total score and the achieved certification level.
+    - A detailed list of all criteria for which evidence has been uploaded, including their points.
+    - A footer with the date the report was generated.
 
 ---
 
