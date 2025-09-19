@@ -181,7 +181,16 @@ const UltraCertifyPage: FC = () => {
       });
       return;
     }
-    window.print();
+    
+    toast({
+      title: "Generating Report",
+      description: "Your report is being prepared. The print dialog will open shortly.",
+    });
+
+    // A small delay helps ensure the user sees the toast before the print dialog opens.
+    setTimeout(() => {
+      window.print();
+    }, 500);
   };
 
   const visibleCriteria = useMemo(() => {
@@ -190,8 +199,8 @@ const UltraCertifyPage: FC = () => {
 
   return (
     <>
-      <main className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8 no-print">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <main className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-8 no-print">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-primary font-headline">UltraCertify</h1>
@@ -433,7 +442,7 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div className="print-area hidden">
+      <div className="print-area">
         <ReportTemplate
           projectData={projectData}
           files={uploadedFiles}
@@ -468,3 +477,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    

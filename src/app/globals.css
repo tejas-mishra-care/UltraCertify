@@ -77,5 +77,14 @@
   }
   .print-area {
     display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  main {
+    display: none;
   }
 }
+
+    
