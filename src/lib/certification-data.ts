@@ -48,6 +48,8 @@ export const criteria: Criterion[] = [
     documents: 'Photographs of top soil preservation',
     points: 1,
   },
+  /*
+  // FULL CRITERIA LIST - UNCOMMENT TO RESTORE
   {
     id: 'setbacks',
     name: 'Setbacks',
@@ -336,6 +338,7 @@ export const criteria: Criterion[] = [
     documents: 'IGBC Accredited Professional Certificate.',
     points: 1,
   },
+  */
 ];
 
 
