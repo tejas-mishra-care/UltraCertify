@@ -170,7 +170,8 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    await form.trigger();
     const allFieldsFilled = form.formState.isValid;
     if (!allFieldsFilled) {
       toast({
@@ -178,7 +179,6 @@ const UltraCertifyPage: FC = () => {
         title: "Incomplete Project Details",
         description: "Please fill in all project details before generating the report.",
       });
-      form.trigger();
       return;
     }
     window.print();
