@@ -91,11 +91,12 @@ const UltraCertifyPage: FC = () => {
       fullAddress: "",
       permissionAuthority: "",
       numberOfFloors: 1,
-      totalSiteArea: 0,
-      totalBuiltUpArea: 0,
+      totalSiteArea: 1,
+      totalBuiltUpArea: 1,
       landscapeArea: 0,
       buildingType: "New",
     },
+    mode: 'onChange'
   });
 
   const projectData = form.watch();
