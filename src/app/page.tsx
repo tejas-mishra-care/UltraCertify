@@ -79,7 +79,6 @@ const UltraCertifyPage: FC = () => {
   const [isAISuggesting, setIsAISuggesting] = useState(false);
   const [aiSuggestions, setAISuggestions] = useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
 
   const { toast } = useToast();
 
@@ -180,6 +179,10 @@ const UltraCertifyPage: FC = () => {
         title: "Incomplete Project Details",
         description: "Please fill in all project details before generating the report.",
       });
+      // Trigger validation to show error messages
+      Object.keys(form.getValues()).forEach((key) => {
+        form.trigger(key as keyof z.infer<typeof projectSchema>);
+      });
       return;
     }
     
@@ -188,11 +191,8 @@ const UltraCertifyPage: FC = () => {
       description: "Your report is being prepared. The print dialog will open shortly.",
     });
 
-    setIsPrinting(true);
-    setTimeout(() => {
-      window.print();
-      setIsPrinting(false);
-    }, 500);
+    // The CSS media query will handle showing the right content.
+    window.print();
   };
 
   const visibleCriteria = useMemo(() => {
@@ -201,7 +201,7 @@ const UltraCertifyPage: FC = () => {
 
   return (
     <>
-      <main className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
+      <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -444,17 +444,15 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      {isPrinting && (
-        <div id="print-content">
-          <ReportTemplate
-            projectData={projectData}
-            files={uploadedFiles}
-            score={currentScore}
-            maxScore={maxScore}
-            level={certificationLevel.level}
-          />
-        </div>
-      )}
+      <div id="print-content" className="hidden print:block">
+        <ReportTemplate
+          projectData={projectData}
+          files={uploadedFiles}
+          score={currentScore}
+          maxScore={maxScore}
+          level={certificationLevel.level}
+        />
+      </div>
 
       <Dialog open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
