@@ -15,7 +15,13 @@ import {
   FileDown,
   Loader2,
   Sparkles,
-  Award
+  Award,
+  Hash,
+  Map,
+  Building2,
+  Layers,
+  Trees,
+  FileText
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,14 +39,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
-import type { Criterion, ProjectData, UploadedFile } from "@/lib/types";
+import type { UploadedFile } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
@@ -48,10 +62,16 @@ import { ReportTemplate } from "@/components/report-template";
 import { useToast } from "@/hooks/use-toast";
 
 const projectSchema = z.object({
-  projectName: z.string().min(1, "Project name is required"),
-  projectAddress: z.string().min(1, "Project address is required"),
+  registrationNumber: z.string().min(1, "Registration number is required"),
   ownerName: z.string().min(1, "Owner name is required"),
-  totalArea: z.coerce.number().min(1, "Total area must be greater than 0"),
+  projectLocation: z.string().min(1, "Project location is required"),
+  fullAddress: z.string().min(1, "Full address is required"),
+  permissionAuthority: z.string().min(1, "Permission authority is required"),
+  numberOfFloors: z.coerce.number().int().min(1, "Number of floors must be at least 1"),
+  totalSiteArea: z.coerce.number().min(1, "Total site area must be greater than 0"),
+  totalBuiltUpArea: z.coerce.number().min(1, "Total built-up area must be greater than 0"),
+  landscapeArea: z.coerce.number().min(0, "Landscape area cannot be negative"),
+  buildingType: z.enum(["New", "Existing"]),
 });
 
 const UltraCertifyPage: FC = () => {
@@ -59,20 +79,27 @@ const UltraCertifyPage: FC = () => {
   const [isAISuggesting, setIsAISuggesting] = useState(false);
   const [aiSuggestions, setAISuggestions] = useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
-  
+
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
-      projectName: "",
-      projectAddress: "",
+      registrationNumber: "",
       ownerName: "",
-      totalArea: 0,
+      projectLocation: "",
+      fullAddress: "",
+      permissionAuthority: "",
+      numberOfFloors: 1,
+      totalSiteArea: 0,
+      totalBuiltUpArea: 0,
+      landscapeArea: 0,
+      buildingType: "New",
     },
   });
 
   const projectData = form.watch();
+  const buildingType = form.watch("buildingType");
 
   const handleFileChange = useCallback((criterionId: string, file: UploadedFile | null) => {
     setUploadedFiles((prev) => {
@@ -87,20 +114,33 @@ const UltraCertifyPage: FC = () => {
   }, []);
 
   const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
+    const applicableCriteria = criteria.filter(c => c.applicability[buildingType]);
+    
     const score = Object.keys(uploadedFiles).reduce((acc, criterionId) => {
-      const criterion = criteria.find((c) => c.id === criterionId);
-      return acc + (criterion?.points || 0);
+      const criterion = applicableCriteria.find((c) => c.id === criterionId);
+      if (criterion && criterion.type === 'Credit') {
+        const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+        return acc + (points || 0);
+      }
+      return acc;
     }, 0);
 
-    const max = criteria.reduce((acc, c) => acc + c.points, 0);
+    const max = applicableCriteria.reduce((acc, c) => {
+        if (c.type === 'Credit') {
+            const points = typeof c.points === 'number' ? c.points : c.points[buildingType];
+            return acc + points;
+        }
+        return acc;
+    }, 0);
+    
     const prog = max > 0 ? (score / max) * 100 : 0;
 
     const level = [...certificationLevels]
       .reverse()
-      .find((l) => score >= l.minScore) || { level: 'Uncertified', color: 'text-gray-500' };
+      .find((l) => score >= l.minScore[buildingType]) || { level: 'Uncertified', color: 'text-gray-500', minScore: { New: 0, Existing: 0 } };
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
-  }, [uploadedFiles]);
+  }, [uploadedFiles, buildingType]);
 
   const handleSuggestCredits = async () => {
     const images = Object.values(uploadedFiles).map(file => file.dataURL);
@@ -143,6 +183,10 @@ const UltraCertifyPage: FC = () => {
     window.print();
   };
 
+  const visibleCriteria = useMemo(() => {
+    return criteria.filter(c => c.applicability[buildingType]);
+  }, [buildingType]);
+
   return (
     <>
       <main className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8 no-print">
@@ -150,7 +194,7 @@ const UltraCertifyPage: FC = () => {
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-primary font-headline">UltraCertify</h1>
-              <p className="text-muted-foreground">Your Green Building Certification Partner</p>
+              <p className="text-muted-foreground">IGBC's NEST PLUS Ver 1.0 (Individual Green Home)</p>
             </div>
              <div className="flex items-center gap-2">
                 <Award className="w-6 h-6 text-primary" />
@@ -163,26 +207,32 @@ const UltraCertifyPage: FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Certification Criteria</CardTitle>
-                  <CardDescription>Upload an image for each criterion you have met.</CardDescription>
+                  <CardDescription>Upload required documents for each criterion you have met.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[600px] pr-4">
+                  <ScrollArea className="h-[1200px] pr-4">
                     <div className="space-y-4">
-                      {criteria.map((criterion, index) => (
+                      {visibleCriteria.map((criterion, index) => (
                         <React.Fragment key={criterion.id}>
                           <div className="flex items-start gap-4 p-4 rounded-lg transition-colors hover:bg-secondary/50">
                             <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${uploadedFiles[criterion.id] ? 'text-green-500' : 'text-muted-foreground/50'}`} />
                             <div className="flex-1">
-                              <h3 className="font-semibold">{criterion.name}</h3>
-                              <p className="text-sm text-muted-foreground">{criterion.description}</p>
-                              <p className="text-sm font-medium text-primary">Points: {criterion.points}</p>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold">{criterion.name}</h3>
+                                <Badge variant={criterion.type === 'Mandatory' ? 'destructive' : 'secondary'}>{criterion.type}</Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
+                              <p className="text-sm text-muted-foreground mt-1"><strong>Documents:</strong> {criterion.documents}</p>
+                              {criterion.type === 'Credit' && (
+                                <p className="text-sm font-medium text-primary mt-1">Points: {typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType]}</p>
+                              )}
                             </div>
                             <ImageUploader
                               criterionId={criterion.id}
                               onFileChange={handleFileChange}
                             />
                           </div>
-                          {index < criteria.length - 1 && <Separator />}
+                          {index < visibleCriteria.length - 1 && <Separator />}
                         </React.Fragment>
                       ))}
                     </div>
@@ -212,7 +262,7 @@ const UltraCertifyPage: FC = () => {
                      {certificationLevels.map(level => (
                        <div key={level.level} className="flex justify-between items-center text-sm">
                          <span className={`${level.color}`}>{level.level}</span>
-                         <span className="font-medium text-muted-foreground">{level.minScore}+ Points</span>
+                         <span className="font-medium text-muted-foreground">{level.minScore[buildingType]}+ Points</span>
                        </div>
                      ))}
                    </div>
@@ -227,25 +277,31 @@ const UltraCertifyPage: FC = () => {
                 <CardContent>
                   <Form {...form}>
                     <form className="space-y-4">
-                      <FormField control={form.control} name="projectName" render={({ field }) => (
+                      <FormField control={form.control} name="buildingType" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Building Type</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select building type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="New">New</SelectItem>
+                                <SelectItem value="Existing">Existing</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField control={form.control} name="registrationNumber" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Project Name</FormLabel>
+                          <FormLabel>Project Registration Number</FormLabel>
                           <FormControl>
                             <div className="relative">
-                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., Eco Tower" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="projectAddress" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Project Address</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="123 Green Way, Eco City" {...field} className="pl-9" />
+                               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="e.g., NEST-12345" {...field} className="pl-9" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -263,13 +319,85 @@ const UltraCertifyPage: FC = () => {
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormField control={form.control} name="totalArea" render={({ field }) => (
+                       <FormField control={form.control} name="projectLocation" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Total Area (sq. ft)</FormLabel>
+                          <FormLabel>Project Location</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                               <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="e.g., Eco City" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="fullAddress" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Address with Pincode</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="123 Green Way, Eco City, 123456" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="permissionAuthority" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Permission Authority</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="e.g., Local Municipal Authority" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={form.control} name="numberOfFloors" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Floors</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                               <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input type="number" placeholder="2" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="totalSiteArea" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Site Area (sq. m)</FormLabel>
                            <FormControl>
                             <div className="relative">
                                <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="50000" {...field} className="pl-9" />
+                               <Input type="number" placeholder="200" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={form.control} name="totalBuiltUpArea" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Built-up Area (sq. m)</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input type="number" placeholder="150" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={form.control} name="landscapeArea" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Landscape Area (sq. m)</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <Trees className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input type="number" placeholder="50" {...field} className="pl-9" />
                             </div>
                           </FormControl>
                           <FormMessage />

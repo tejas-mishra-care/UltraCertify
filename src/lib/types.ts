@@ -1,21 +1,32 @@
+export type BuildingType = 'New' | 'Existing';
+
 export type Criterion = {
   id: string;
   name: string;
-  description: string;
-  points: number;
+  applicability: Record<BuildingType, boolean>;
+  type: 'Mandatory' | 'Credit';
+  requirements: string;
+  documents: string;
+  points: number | Record<BuildingType, number>;
 };
 
 export type CertificationLevel = {
-  level: 'Certified' | 'Silver' | 'Gold' | 'Platinum' | 'Uncertified';
-  minScore: number;
+  level: 'Certified' | 'Silver' | 'Gold' | 'Uncertified';
+  minScore: Record<BuildingType, number>;
   color: string;
 };
 
 export type ProjectData = {
-  projectName: string;
-  projectAddress: string;
+  registrationNumber: string;
   ownerName: string;
-  totalArea: number;
+  projectLocation: string;
+  fullAddress: string;
+  permissionAuthority: string;
+  numberOfFloors: number;
+  totalSiteArea: number;
+  totalBuiltUpArea: number;
+  landscapeArea: number;
+  buildingType: BuildingType;
 };
 
 export type UploadedFile = {

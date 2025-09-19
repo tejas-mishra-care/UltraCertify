@@ -19,22 +19,29 @@ export const ReportTemplate: React.FC<ReportTemplateProps> = ({
   maxScore,
   level,
 }) => {
-  const achievedCriteria = criteria.filter(c => files[c.id]);
+  const buildingType = projectData.buildingType;
+  const achievedCriteria = criteria.filter(c => files[c.id] && c.applicability[buildingType]);
 
   return (
     <div className="bg-white text-black p-8 font-sans">
       <header className="border-b-2 border-gray-800 pb-4 mb-8">
         <h1 className="text-4xl font-bold text-gray-800">UltraCertify Report</h1>
-        <p className="text-lg text-gray-600">Green Building Certification Summary</p>
+        <p className="text-lg text-gray-600">IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary</p>
       </header>
 
       <section className="mb-8">
         <h2 className="text-2xl font-semibold border-b border-gray-300 pb-2 mb-4 text-gray-700">Project Details</h2>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          <div><strong className="text-gray-600">Project Name:</strong> {projectData.projectName}</div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+          <div><strong className="text-gray-600">Registration Number:</strong> {projectData.registrationNumber}</div>
           <div><strong className="text-gray-600">Owner Name:</strong> {projectData.ownerName}</div>
-          <div><strong className="text-gray-600">Address:</strong> {projectData.projectAddress}</div>
-          <div><strong className="text-gray-600">Total Area:</strong> {projectData.totalArea} sq. ft</div>
+          <div><strong className="text-gray-600">Building Type:</strong> {projectData.buildingType}</div>
+          <div><strong className="text-gray-600">Permission Authority:</strong> {projectData.permissionAuthority}</div>
+          <div><strong className="text-gray-600">Project Location:</strong> {projectData.projectLocation}</div>
+          <div><strong className="text-gray-600">Address:</strong> {projectData.fullAddress}</div>
+          <div><strong className="text-gray-600">Number of Floors:</strong> {projectData.numberOfFloors}</div>
+          <div><strong className="text-gray-600">Total Site Area:</strong> {projectData.totalSiteArea} sq. m</div>
+          <div><strong className="text-gray-600">Total Built-up Area:</strong> {projectData.totalBuiltUpArea} sq. m</div>
+          <div><strong className="text-gray-600">Landscape Area:</strong> {projectData.landscapeArea} sq. m</div>
         </div>
       </section>
 
@@ -62,18 +69,21 @@ export const ReportTemplate: React.FC<ReportTemplateProps> = ({
                 <div className="flex justify-between items-start">
                   <div>
                      <h3 className="text-lg font-bold text-gray-800 flex items-center">
-                        <CheckCircle2 className="w-5 h-5 text-green-600 mr-2" />
+                        {criterion.type === 'Mandatory' ? <CheckCircle2 className="w-5 h-5 text-green-600 mr-2" /> : <CheckCircle2 className="w-5 h-5 text-blue-600 mr-2" />}
                         {criterion.name}
                      </h3>
-                     <p className="text-gray-600 mt-1">{criterion.description}</p>
-                     <p className="text-sm font-semibold text-blue-800">Points Awarded: {criterion.points}</p>
+                     <p className="text-xs font-semibold text-gray-500 uppercase">{criterion.type}</p>
+                     <p className="text-gray-600 mt-1 text-sm">{criterion.requirements}</p>
+                     {criterion.type === 'Credit' && (
+                       <p className="text-sm font-semibold text-blue-800 mt-1">Points Awarded: {typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType]}</p>
+                     )}
                   </div>
                   {files[criterion.id] && (
                     <div className="w-32 h-32 ml-4 relative shrink-0">
                       <Image
                         src={files[criterion.id].preview}
                         alt={`Evidence for ${criterion.name}`}
-                        layout="fill"
+                        fill
                         className="object-cover rounded-md border"
                       />
                     </div>
