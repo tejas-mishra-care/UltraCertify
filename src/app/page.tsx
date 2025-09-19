@@ -79,6 +79,7 @@ const UltraCertifyPage: FC = () => {
   const [isAISuggesting, setIsAISuggesting] = useState(false);
   const [aiSuggestions, setAISuggestions] = useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const { toast } = useToast();
 
@@ -187,9 +188,10 @@ const UltraCertifyPage: FC = () => {
       description: "Your report is being prepared. The print dialog will open shortly.",
     });
 
-    // A small delay helps ensure the user sees the toast before the print dialog opens.
+    setIsPrinting(true);
     setTimeout(() => {
       window.print();
+      setIsPrinting(false);
     }, 500);
   };
 
@@ -200,7 +202,7 @@ const UltraCertifyPage: FC = () => {
   return (
     <>
       <main className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-8 no-print">
+        <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold text-primary font-headline">UltraCertify</h1>
@@ -442,15 +444,17 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div className="print-area">
-        <ReportTemplate
-          projectData={projectData}
-          files={uploadedFiles}
-          score={currentScore}
-          maxScore={maxScore}
-          level={certificationLevel.level}
-        />
-      </div>
+      {isPrinting && (
+        <div id="print-content">
+          <ReportTemplate
+            projectData={projectData}
+            files={uploadedFiles}
+            score={currentScore}
+            maxScore={maxScore}
+            level={certificationLevel.level}
+          />
+        </div>
+      )}
 
       <Dialog open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -477,5 +481,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    

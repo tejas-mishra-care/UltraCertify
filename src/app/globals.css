@@ -68,23 +68,16 @@
 }
 
 @media print {
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  body * {
+    visibility: hidden;
   }
-  .no-print {
-    display: none !important;
+  #print-content, #print-content * {
+    visibility: visible;
   }
-  .print-area {
-    display: block !important;
+  #print-content {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
   }
-  main {
-    display: none;
-  }
 }
-
-    
