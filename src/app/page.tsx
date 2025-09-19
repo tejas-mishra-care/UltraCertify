@@ -429,7 +429,7 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div id="print-content" className="hidden">
+      <div id="print-content">
         <ReportTemplate
           projectData={projectData}
           files={uploadedFiles}
