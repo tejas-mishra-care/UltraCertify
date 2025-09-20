@@ -1,3 +1,4 @@
+
 import type { Criterion, CertificationLevel } from './types';
 
 export const criteria: Criterion[] = [
@@ -40,12 +41,10 @@ export const criteria: Criterion[] = [
     points: { New: 4, Existing: 2 },
     options: {
       New: [
-        { label: 'Select option', points: 0 },
         { label: 'One Feature', points: 2 },
         { label: 'Two Features', points: 4 },
       ],
       Existing: [
-        { label: 'Select option', points: 0 },
         { label: 'One Feature', points: 1 },
         { label: 'Two Features', points: 2 },
       ]
@@ -69,7 +68,6 @@ export const criteria: Criterion[] = [
     documents: 'Photographs of setback areas',
     points: 2,
     options: [
-        { label: 'Select option', points: 0 },
         { label: '2 sides', points: 1 },
         { label: 'More than 2 sides', points: 2 },
     ]
@@ -92,7 +90,6 @@ export const criteria: Criterion[] = [
     documents: 'Photographs of Landscape and natural topography. Provide the Total Site Area and Landscape Area.',
     points: 4,
     options: [
-        { label: 'Select option', points: 0 },
         { label: '30 sq.ft', points: 1 },
         { label: '50 sq.ft', points: 2 },
         { label: '75 sq.ft', points: 3 },
@@ -162,7 +159,6 @@ export const criteria: Criterion[] = [
     documents: 'Photographs of the each measure implemented.',
     points: 2,
     options: [
-        { label: 'Select option', points: 0 },
         { label: 'Any 2 measures', points: 1 },
         { label: 'Any 4 measures', points: 2 },
     ]
@@ -184,10 +180,11 @@ export const criteria: Criterion[] = [
     requirements: 'Rainwater harvesting system to capture at least 750 Litres (2 points) & Reuse provision for harvested water (2 points). Note: For an existing well or borewell the project shall be awarded 4 points.',
     documents: 'Photograph of rainwater harvesting pits, Reuse application',
     points: 4,
+    selectionType: 'multiple',
     options: [
-        { label: 'Select option', points: 0 },
         { label: 'Harvesting (750L)', points: 2 },
-        { label: 'Harvesting & Reuse / Existing Well', points: 4 },
+        { label: 'Reuse provision', points: 2 },
+        { label: 'Existing Well / Borewell', points: 4 },
     ]
   },
   {
@@ -198,8 +195,8 @@ export const criteria: Criterion[] = [
     requirements: 'Provide efficient water fixtures: Dual flush cistern (3 pts), Tap with aerators (2 pts), Showers with aerators (2 pts), Health faucet with aerators (1 pt)',
     documents: 'Photographs of taps, health faucet, showers with aerators, and dual flush',
     points: 8,
-     options: [
-        { label: 'Select achieved fixtures', points: 0 },
+    selectionType: 'multiple',
+    options: [
         { label: 'Dual flush cistern', points: 3 },
         { label: 'Tap with aerators', points: 2 },
         { label: 'Showers with aerators', points: 2 },
@@ -214,6 +211,11 @@ export const criteria: Criterion[] = [
     requirements: 'Provide Water metering (1 Point) and Automatic water level controllers for Overhead tank (1 Point)',
     documents: 'Photographs of water level controllers, Photograph of water meter',
     points: 2,
+    selectionType: 'multiple',
+    options: [
+      { label: 'Water Metering', points: 1 },
+      { label: 'Automatic water level controllers', points: 1 }
+    ]
   },
   {
     id: 'efficient-envelope',
@@ -223,11 +225,10 @@ export const criteria: Criterion[] = [
     requirements: 'Implement energy efficiency measures. Wall Assembly: AAC Blocks/Flyash/Equivalent thermal properties (3 pts). Roof Assembly: RCC+Brickbat Coba/Filler slabs/Insulation/Equivalent thermal properties (2 pts).',
     documents: 'Construction photographs of blocks, Photographs and details of roof assembly',
     points: 5,
+    selectionType: 'multiple',
     options: [
-        { label: 'Select option', points: 0 },
         { label: 'Wall Assembly', points: 3 },
         { label: 'Roof Assembly', points: 2 },
-        { label: 'Both Wall & Roof Assembly', points: 5 },
     ]
   },
   {
@@ -237,7 +238,24 @@ export const criteria: Criterion[] = [
     type: 'Credit',
     requirements: 'Procure 100% BEE / Energy Certified appliances. New Building: LED lights (1pt), 3 Star Fans (1pt), Inverter Refrigerator (1pt), 3/5 Star Inverter AC (1/2pts). Existing Building: LED (2pts), Fans (3pts), Refrigerator (1pt), 3/5 Star AC (1/2pts).',
     documents: 'Photographs of installed energy efficient appliances with star ratings',
-    points: { New: 4, Existing: 10 },
+    points: { New: 5, Existing: 8 },
+    selectionType: 'multiple',
+    options: {
+      New: [
+        { label: 'LED lights', points: 1 },
+        { label: '3 Star Energy efficient fans', points: 1 },
+        { label: 'Inverter based Refrigerator', points: 1 },
+        { label: '3 Star Inverter Air conditioner', points: 1 },
+        { label: '5 Star Inverter Air conditioner', points: 2 },
+      ],
+      Existing: [
+        { label: 'LED lights', points: 2 },
+        { label: '3 Star Energy efficient fans', points: 3 },
+        { label: 'Inverter based Refrigerator', points: 1 },
+        { label: '3 Star Inverter Air conditioner', points: 1 },
+        { label: '5 Star Inverter Air conditioner', points: 2 },
+      ]
+    }
   },
   {
     id: 'sun-shades',
@@ -266,7 +284,6 @@ export const criteria: Criterion[] = [
     documents: 'Purchase invoice of solar panels, Photographs of installed solar panels',
     points: 5,
     options: [
-        { label: 'Select capacity', points: 0 },
         { label: '0.5 kW', points: 1 },
         { label: '1.5 kW', points: 3 },
         { label: '2.5 kW', points: 5 },
@@ -308,7 +325,6 @@ export const criteria: Criterion[] = [
     documents: 'Costing sheet of the materials (Annexure 3), Google map showing distance of the manufacturers',
     points: 3,
      options: [
-        { label: 'Select percentage', points: 0 },
         { label: '30% of total cost', points: 1 },
         { label: '40% of total cost', points: 2 },
         { label: '50% of total cost', points: 3 },
@@ -323,7 +339,6 @@ export const criteria: Criterion[] = [
     documents: 'Floor plans, door/window schedules, elevations, photographs, Daylighting calculation template(Annexure1)',
     points: 4,
     options: [
-        { label: 'Select area percentage', points: 0 },
         { label: '25% of areas', points: 1 },
         { label: '50% of areas', points: 2 },
         { label: '75% of areas', points: 3 },
@@ -339,7 +354,6 @@ export const criteria: Criterion[] = [
     documents: 'Floor plans, door/window schedules, elevations, photographs, Ventilation calculation template(Annexure2)',
     points: 3,
     options: [
-        { label: 'Select openable area', points: 0 },
         { label: '5% of carpet area', points: 1 },
         { label: '7.5% of carpet area', points: 2 },
         { label: '10% of carpet area', points: 3 },
@@ -353,6 +367,11 @@ export const criteria: Criterion[] = [
     requirements: 'Provide exhaust systems in kitchen and bathrooms: Opening provision (1 point), Exhaust Fan (1 point)',
     documents: 'Photograph of opening and exhaust system in kitchen and bathroom',
     points: 2,
+    selectionType: 'multiple',
+    options: [
+      { label: 'Opening provision', points: 1 },
+      { label: 'Exhaust Fan', points: 1 },
+    ]
   },
   {
     id: 'cross-ventilation',
@@ -362,6 +381,12 @@ export const criteria: Criterion[] = [
     requirements: 'Ensure two openings (window/ventilator) in each space. Living room/Kitchen (1 point), Each Room (1 Point, Max 2)',
     documents: 'Floor plans highlighting the openings, Photograph of window/door openings',
     points: 3,
+    selectionType: 'multiple',
+    options: [
+      { label: 'Living room/Kitchen', points: 1 },
+      { label: 'Room 1', points: 1 },
+      { label: 'Room 2', points: 1 },
+    ]
   },
   {
     id: 'exterior-views',
@@ -371,6 +396,12 @@ export const criteria: Criterion[] = [
     requirements: 'Ensure direct line of sight to vision glazing. Living room/Kitchen (1 point), Each Room (1 Point, Max 2)',
     documents: 'Photographs of the exterior views from each living space.',
     points: 3,
+    selectionType: 'multiple',
+    options: [
+      { label: 'Living room/Kitchen', points: 1 },
+      { label: 'Room 1', points: 1 },
+      { label: 'Room 2', points: 1 },
+    ]
   },
   {
     id: 'home-automation',
@@ -380,6 +411,13 @@ export const criteria: Criterion[] = [
     requirements: 'Install home automation devices. One point for each item (Max 3 for New, 2 for Existing). (e.g., Lighting Controls, CCTV, Solar meter, Sensors)',
     documents: 'Technical cutsheets and photographs of the installed Appliances',
     points: { New: 3, Existing: 2 },
+    selectionType: 'multiple',
+    options: [
+      { label: 'Lighting Controls', points: 1 },
+      { label: 'CCTV', points: 1 },
+      { label: 'Solar meter', points: 1 },
+      { label: 'Sensors', points: 1 },
+    ]
   },
   {
     id: 'green-housekeeping-chemicals',

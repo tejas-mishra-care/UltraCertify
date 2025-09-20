@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from "react";
@@ -53,6 +54,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
 
 import type { UploadedFile, ProjectData, CriterionOption } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
@@ -79,7 +83,7 @@ const UltraCertifyPage: FC = () => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [aiSuggestions, setAISuggestions] = useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
 
   const { toast } = useToast();
 
@@ -106,7 +110,7 @@ const UltraCertifyPage: FC = () => {
   const handleFileChange = useCallback((criterionId: string, files: UploadedFile[] | null) => {
     setUploadedFiles((prev) => {
       const newFiles = { ...prev };
-      if (files) {
+      if (files && files.length > 0) {
         newFiles[criterionId] = files;
       } else {
         delete newFiles[criterionId];
@@ -122,36 +126,66 @@ const UltraCertifyPage: FC = () => {
     }));
   }, []);
 
+  const handleCheckboxChange = useCallback((criterionId: string, optionLabel: string, checked: boolean) => {
+    setSelectedOptions(prev => {
+      const currentSelection = prev[criterionId] || [];
+      const newSelection = Array.isArray(currentSelection) ? [...currentSelection] : [];
+      if (checked) {
+        if (!newSelection.includes(optionLabel)) {
+          newSelection.push(optionLabel);
+        }
+      } else {
+        const index = newSelection.indexOf(optionLabel);
+        if (index > -1) {
+          newSelection.splice(index, 1);
+        }
+      }
+      return {
+        ...prev,
+        [criterionId]: newSelection
+      };
+    });
+  }, []);
+
+
+  const getCriterionScore = useCallback((criterion: (typeof criteria)[0], buildingType: 'New' | 'Existing') => {
+      if (criterion.type !== 'Credit') return 0;
+
+      const selection = selectedOptions[criterion.id];
+      let options: CriterionOption[] | undefined;
+      if (criterion.options) {
+          if (Array.isArray(criterion.options)) {
+              options = criterion.options;
+          } else {
+              options = criterion.options[buildingType];
+          }
+      }
+
+      if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
+          return selection.reduce((acc, sel) => {
+              const option = options?.find(opt => opt.label === sel);
+              return acc + (option?.points || 0);
+          }, 0);
+      }
+      
+      if (typeof selection === 'string' && options) {
+          const selectedOption = options.find(opt => opt.label === selection);
+          return selectedOption?.points || 0;
+      }
+      
+      if (!criterion.options && selection === 'true') {
+          const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+          return points || 0;
+      }
+
+      return 0;
+  }, [selectedOptions]);
+
   const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
     const applicableCriteria = criteria.filter(c => c.applicability[buildingType]);
     
     const score = applicableCriteria.reduce((acc, criterion) => {
-      if (criterion.type !== 'Credit') return acc;
-      
-      const selectedValue = selectedOptions[criterion.id];
-      if (selectedValue) {
-        let options: CriterionOption[] | undefined;
-        if (Array.isArray(criterion.options)) {
-          options = criterion.options;
-        } else if (criterion.options) {
-          options = criterion.options[buildingType];
-        }
-
-        const selectedOption = options?.find(opt => opt.label === selectedValue);
-        if (selectedOption) {
-          return acc + selectedOption.points;
-        }
-      } else if (!criterion.options) {
-        // For criteria without options, give points if it has files (or if it's selected somehow)
-        // For now, let's assume no options means it's a simple checkbox-like credit
-        // This part needs clearer logic on how to award points for non-option credits.
-        // Let's assume for now they are awarded if selected, which we can track in selectedOptions
-        if (selectedOptions[criterion.id] === 'true') {
-            const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-            return acc + (points || 0);
-        }
-      }
-      return acc;
+      return acc + getCriterionScore(criterion, buildingType);
     }, 0);
 
     const max = applicableCriteria.reduce((acc, c) => {
@@ -169,7 +203,7 @@ const UltraCertifyPage: FC = () => {
       .find((l) => score >= l.minScore[buildingType]) || { level: 'Uncertified', color: 'text-gray-500', minScore: { New: 0, Existing: 0 } };
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
-  }, [selectedOptions, buildingType]);
+  }, [selectedOptions, buildingType, getCriterionScore]);
 
   const handleSuggestCredits = async () => {
     const images = Object.values(uploadedFiles).flat().map(file => file.dataURL);
@@ -208,18 +242,19 @@ const UltraCertifyPage: FC = () => {
     try {
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 15;
         let yPos = margin;
         let pageCount = 1;
 
         const addFooter = () => {
             doc.setFontSize(8);
-            doc.text(`Report generated by UltraCertify on ${new Date().toLocaleDateString()}`, margin, doc.internal.pageSize.getHeight() - 10);
-            doc.text(`Page ${pageCount}`, pageWidth - margin, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
+            doc.text(`Report generated by UltraCertify on ${new Date().toLocaleDateString()}`, margin, pageHeight - 10);
+            doc.text(`Page ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         };
         
         const checkPageBreak = (spaceNeeded: number) => {
-            if (yPos + spaceNeeded > doc.internal.pageSize.getHeight() - margin - 10) { // -10 for footer
+            if (yPos + spaceNeeded > pageHeight - margin - 10) { // -10 for footer
                 addFooter();
                 doc.addPage();
                 pageCount++;
@@ -294,15 +329,28 @@ const UltraCertifyPage: FC = () => {
         doc.text('Achieved Criteria', margin, yPos);
         yPos += 8;
         
-        const achievedCriteria = criteria.filter(c => (uploadedFiles[c.id]?.length || 0) > 0 && c.applicability[buildingType]);
+        const achievedCriteria = criteria.filter(c => {
+            const selection = selectedOptions[c.id];
+            return (
+                c.applicability[buildingType] &&
+                (
+                    (Array.isArray(selection) && selection.length > 0) ||
+                    (typeof selection === 'string' && selection !== '' && selection !== 'false')
+                )
+            );
+        });
 
         if (achievedCriteria.length === 0) {
             doc.setFontSize(10);
             doc.setFont('helvetica', 'italic');
-            doc.text('No criteria have been met with uploaded evidence.', margin, yPos);
+            checkPageBreak(10);
+            doc.text('No criteria have been marked as achieved.', margin, yPos);
+            yPos += 10;
         } else {
             for (const criterion of achievedCriteria) {
-                 const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+                 const points = getCriterionScore(criterion, buildingType);
+                 if (points === 0 && criterion.type === 'Credit') continue;
+
                  const requirementsText = doc.splitTextToSize(`Requirements: ${criterion.requirements}`, pageWidth - margin * 2);
                  const spaceForText = requirementsText.length * 4 + 15 + (criterion.type === 'Credit' ? 6 : 0);
                  checkPageBreak(spaceForText);
@@ -322,25 +370,39 @@ const UltraCertifyPage: FC = () => {
                     doc.text(`Points Awarded: ${points}`, margin, yPos);
                     yPos += 6;
                 }
+                
+                yPos += 2;
+                doc.setFont('helvetica', 'italic');
+                doc.text('Uploaded Evidence:', margin, yPos);
+                yPos += 5;
+
                 const files = uploadedFiles[criterion.id] || [];
-                for(const file of files) {
-                    try {
-                        const imgProps = doc.getImageProperties(file.dataURL);
-                        const imgWidth = 50;
-                        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-                        
-                        checkPageBreak(imgHeight + 10);
-                        
-                        doc.addImage(file.dataURL, 'JPEG', margin, yPos, imgWidth, imgHeight);
-                        yPos += imgHeight + 5;
-                    } catch (e) {
-                        checkPageBreak(10);
-                        doc.setFont('helvetica', 'italic');
-                        doc.text('Could not display an image for this criterion.', margin, yPos);
-                        yPos += 6;
-                        console.error("Error adding image to PDF:", e);
+
+                if(files.length === 0){
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('No files uploaded for this criterion.', margin + 5, yPos);
+                    yPos += 6;
+                } else {
+                   for(const file of files) {
+                        try {
+                            const imgProps = doc.getImageProperties(file.dataURL);
+                            const imgWidth = 50;
+                            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+                            
+                            checkPageBreak(imgHeight + 10);
+                            
+                            doc.addImage(file.dataURL, 'JPEG', margin, yPos, imgWidth, imgHeight);
+                            yPos += imgHeight + 5;
+                        } catch (e) {
+                            checkPageBreak(10);
+                            doc.setFont('helvetica', 'italic');
+                            doc.text('Could not display an image for this criterion.', margin, yPos);
+                            yPos += 6;
+                            console.error("Error adding image to PDF:", e);
+                        }
                     }
                 }
+                
                 yPos += 5;
                 doc.setLineWidth(0.2);
                 doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -403,11 +465,14 @@ const UltraCertifyPage: FC = () => {
                                options = criterion.options[buildingType];
                            }
                         }
+
+                        const currentPoints = getCriterionScore(criterion, buildingType);
+                        const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
                         
                         return (
                         <React.Fragment key={criterion.id}>
                           <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4 p-4 rounded-lg transition-colors hover:bg-secondary/50">
-                            <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${isAchieved ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
+                            <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved) ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
                             <div className="flex-1 md:col-span-2">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold">{criterion.name}</h3>
@@ -417,20 +482,49 @@ const UltraCertifyPage: FC = () => {
                               <p className="text-sm text-muted-foreground mt-1"><strong>Documents:</strong> {criterion.documents}</p>
                                {criterion.type === 'Credit' && (
                                 <>
-                                  {!options && <p className="text-sm font-medium text-primary mt-1">Points: {typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType]}</p>}
-                                  {options && (
+                                  <p className="text-sm font-medium text-primary mt-2">
+                                    Points: {currentPoints} / {maxPoints}
+                                  </p>
+
+                                  {!options && (
+                                     <div className="flex items-center space-x-2 mt-2">
+                                        <Checkbox
+                                            id={`${criterion.id}-achieved`}
+                                            checked={selectedOptions[criterion.id] === 'true'}
+                                            onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
+                                        />
+                                        <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
+                                    </div>
+                                  )}
+                                  
+                                  {options && criterion.selectionType !== 'multiple' && (
                                      <div className="mt-2">
                                         <Select onValueChange={(value) => handleOptionChange(criterion.id, value)}>
                                             <SelectTrigger className="w-full md:w-[280px]">
                                                 <SelectValue placeholder="Select achieved level..." />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
                                                 {options.map(opt => (
                                                     <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                      </div>
+                                  )}
+
+                                  {options && criterion.selectionType === 'multiple' && (
+                                    <div className="mt-2 space-y-2">
+                                      {options.map(opt => (
+                                        <div key={opt.label} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`${criterion.id}-${opt.label}`}
+                                            onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
+                                          />
+                                          <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
+                                        </div>
+                                      ))}
+                                    </div>
                                   )}
                                 </>
                                )}

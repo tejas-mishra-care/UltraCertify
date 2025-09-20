@@ -1,3 +1,4 @@
+
 export type BuildingType = 'New' | 'Existing';
 
 export type CriterionOption = {
@@ -14,6 +15,7 @@ export type Criterion = {
   documents: string;
   points: number | Record<BuildingType, number>;
   options?: CriterionOption[] | Record<BuildingType, CriterionOption[]>;
+  selectionType?: 'multiple';
 };
 
 export type CertificationLevel = {
