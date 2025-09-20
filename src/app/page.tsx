@@ -5,6 +5,8 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   Building,
   Ruler,
@@ -76,6 +78,7 @@ const projectSchema = z.object({
 const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile>>({});
   const [isAISuggesting, setIsAISuggesting] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [aiSuggestions, setAISuggestions] = useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
@@ -169,16 +172,54 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    const reportElement = document.getElementById('print-content');
+    if (!reportElement) {
+        toast({
+            variant: "destructive",
+            title: "Report Not Found",
+            description: "Could not find the report content to generate the PDF.",
+        });
+        return;
+    }
+
+    setIsGeneratingPDF(true);
     toast({
-      title: "Generating Report",
-      description: "Your report is being prepared. The print dialog will open shortly.",
+        title: "Generating Report...",
+        description: "Please wait while your PDF is being created.",
     });
-    
-    // Use a short timeout to allow the toast to render before the blocking print dialog opens.
-    setTimeout(() => {
-      window.print();
-    }, 500);
+
+    try {
+        const canvas = await html2canvas(reportElement, {
+            scale: 2, // Higher scale for better quality
+            useCORS: true,
+            logging: false,
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('UltraCertify-Report.pdf');
+
+    } catch (error) {
+        console.error("Failed to generate PDF:", error);
+        toast({
+            variant: "destructive",
+            title: "PDF Generation Failed",
+            description: "An unexpected error occurred. Please try again.",
+        });
+    } finally {
+        setIsGeneratingPDF(false);
+    }
   };
 
   const visibleCriteria = useMemo(() => {
@@ -419,8 +460,12 @@ const UltraCertifyPage: FC = () => {
                       )}
                       Suggest Applicable Credits
                     </Button>
-                    <Button onClick={handlePrint} variant="outline">
-                      <FileDown className="mr-2 h-4 w-4" />
+                    <Button onClick={handlePrint} variant="outline" disabled={isGeneratingPDF}>
+                      {isGeneratingPDF ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                          <FileDown className="mr-2 h-4 w-4" />
+                      )}
                       Generate PDF Report
                     </Button>
                  </CardContent>
@@ -430,7 +475,8 @@ const UltraCertifyPage: FC = () => {
         </div>
       </main>
 
-      <div id="print-content">
+      {/* This div is used only for generating the PDF. It is positioned off-screen. */}
+      <div id="print-content" className="absolute -z-50 -top-[9999px] -left-[9999px] bg-white">
         <ReportTemplate
           projectData={projectData}
           files={uploadedFiles}
