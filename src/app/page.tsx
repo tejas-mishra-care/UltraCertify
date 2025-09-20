@@ -315,11 +315,10 @@ const UltraCertifyPage: FC = () => {
         addFooter();
         
         for (const criterion of visibleCriteria) {
-            // Create a page for the criterion text itself
             doc.addPage();
             pageCount++;
             yPos = margin;
-            
+
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
             doc.text(criterion.name, pageWidth / 2, yPos, { align: 'center' });
@@ -358,7 +357,6 @@ const UltraCertifyPage: FC = () => {
                     const selectedOption = options?.find(opt => opt.label === selection);
                     statusText = selectedOption ? `Selected: ${selectedOption.label}` : "Achieved";
                 }
-
             } else { // Mandatory
                 if (hasFiles) {
                     statusText = "Evidence Provided";
@@ -369,57 +367,52 @@ const UltraCertifyPage: FC = () => {
             doc.text('Status:', margin, yPos);
             doc.setFont('helvetica', 'normal');
             doc.text(statusText, margin + 20, yPos);
-            yPos += 8;
+            yPos += 10;
 
+            if (hasFiles) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Evidence:', margin, yPos);
+                yPos += 8;
+                const files = uploadedFiles[criterion.id] || [];
+                for(const file of files) {
+                    try {
+                        const imgProps = doc.getImageProperties(file.dataURL);
+                        const availableWidth = pageWidth - margin * 2;
+                        const availableHeight = pageHeight - yPos - margin - 15; // Space left on page
 
-            doc.setFont('helvetica', 'bold');
-            doc.text('Evidence:', margin, yPos);
-            doc.setFont('helvetica', 'normal');
-            doc.text(hasFiles ? 'See following page(s)' : 'No Evidence Uploaded', margin + 20, yPos);
+                        let imgWidth = imgProps.width;
+                        let imgHeight = imgProps.height;
+                        const aspectRatio = imgWidth / imgHeight;
+
+                        imgWidth = availableWidth * 0.7; // Occupy 70% of width
+                        imgHeight = imgWidth / aspectRatio;
+                        
+                        if (imgHeight > availableHeight) {
+                            doc.addPage();
+                            pageCount++;
+                            yPos = margin;
+                            imgHeight = pageHeight - margin * 2 - 15;
+                            imgWidth = imgHeight * aspectRatio;
+                        }
+
+                        const xOffset = (pageWidth - imgWidth) / 2;
+                        doc.addImage(file.dataURL, 'JPEG', xOffset, yPos, imgWidth, imgHeight);
+                        yPos += imgHeight + 5;
+
+                    } catch (e) {
+                        console.error("Error adding image to PDF:", e);
+                         yPos += 5;
+                        doc.text("Error rendering image.", margin, yPos);
+                    }
+                }
+            } else {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Evidence:', margin, yPos);
+                doc.setFont('helvetica', 'normal');
+                doc.text('No Evidence Uploaded', margin + 20, yPos);
+            }
 
             addFooter();
-
-            // Create a new page for each image associated with this criterion
-            const files = uploadedFiles[criterion.id] || [];
-            for(const file of files) {
-                try {
-                    doc.addPage();
-                    pageCount++;
-                    yPos = margin;
-
-                    doc.setFontSize(12);
-                    doc.setFont('helvetica', 'bold');
-                    doc.text(`Evidence for: ${criterion.name}`, pageWidth/2, yPos, {align: 'center'});
-                    yPos += 10;
-
-                    const imgProps = doc.getImageProperties(file.dataURL);
-                    const availableWidth = pageWidth - margin * 2;
-                    const availableHeight = pageHeight - margin * 2 - 25; // Extra space for header/footer
-
-                    let imgWidth = imgProps.width;
-                    let imgHeight = imgProps.height;
-                    
-                    const aspectRatio = imgWidth / imgHeight;
-
-                    // Scale image to fit within the available space while maintaining aspect ratio
-                    if (imgWidth > availableWidth) {
-                        imgWidth = availableWidth;
-                        imgHeight = imgWidth / aspectRatio;
-                    }
-                    if (imgHeight > availableHeight) {
-                        imgHeight = availableHeight;
-                        imgWidth = imgHeight * aspectRatio;
-                    }
-
-                    const xOffset = (pageWidth - imgWidth) / 2;
-                    const yOffset = (pageHeight - imgHeight) / 2;
-                    
-                    doc.addImage(file.dataURL, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
-                    addFooter();
-                } catch (e) {
-                    console.error("Error adding image to PDF:", e);
-                }
-            }
         }
         
         doc.save('UltraCertify-Report.pdf');
@@ -764,5 +757,6 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
 
     
