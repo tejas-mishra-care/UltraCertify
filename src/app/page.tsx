@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import {
   Building,
   Ruler,
@@ -55,11 +54,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
-import type { UploadedFile } from "@/lib/types";
+import type { UploadedFile, ProjectData } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
-import { ReportTemplate } from "@/components/report-template";
 import { useToast } from "@/hooks/use-toast";
 
 const projectSchema = z.object({
@@ -172,17 +170,7 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
-  const handlePrint = async () => {
-    const reportElement = document.getElementById('print-content');
-    if (!reportElement) {
-        toast({
-            variant: "destructive",
-            title: "Report Not Found",
-            description: "Could not find the report content to generate the PDF.",
-        });
-        return;
-    }
-
+  const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true);
     toast({
         title: "Generating Report...",
@@ -190,25 +178,151 @@ const UltraCertifyPage: FC = () => {
     });
 
     try {
-        const canvas = await html2canvas(reportElement, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true,
-            logging: false,
-        });
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        let yPos = margin;
 
-        const imgData = canvas.toDataURL('image/png');
-        
-        const pdf = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4',
-        });
+        // --- PDF Header ---
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('UltraCertify Report', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 8;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, yPos, { align: 'center' });
+        yPos += 5;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        // --- Project Details ---
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Project Details', margin, yPos);
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+
+        const details = [
+            { label: 'Registration Number', value: projectData.registrationNumber },
+            { label: 'Owner Name', value: projectData.ownerName },
+            { label: 'Building Type', value: projectData.buildingType },
+            { label: 'Permission Authority', value: projectData.permissionAuthority },
+            { label: 'Project Location', value: projectData.projectLocation },
+            { label: 'Full Address', value: projectData.fullAddress },
+            { label: 'Number of Floors', value: projectData.numberOfFloors.toString() },
+            { label: 'Total Site Area', value: `${projectData.totalSiteArea} sq. m` },
+            { label: 'Total Built-up Area', value: `${projectData.totalBuiltUpArea} sq. m` },
+            { label: 'Landscape Area', value: `${projectData.landscapeArea} sq. m` },
+        ];
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('UltraCertify-Report.pdf');
+        details.forEach(detail => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${detail.label}:`, margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(detail.value || '-', margin + 60, yPos);
+            yPos += 7;
+        });
+        
+        yPos += 5;
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+
+        // --- Certification Summary ---
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Certification Summary', margin, yPos);
+        yPos += 8;
+        doc.setFontSize(12);
+        doc.text(`Total Score: ${currentScore} / ${maxScore}`, margin, yPos);
+        yPos += 8;
+        doc.text(`Certification Level: ${certificationLevel.level}`, margin, yPos);
+        yPos += 10;
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+        
+        // --- Achieved Criteria ---
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Achieved Criteria', margin, yPos);
+        yPos += 8;
+        
+        const achievedCriteria = criteria.filter(c => uploadedFiles[c.id] && c.applicability[buildingType]);
+
+        if (achievedCriteria.length === 0) {
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'italic');
+            doc.text('No criteria have been met.', margin, yPos);
+        }
+
+        for (const criterion of achievedCriteria) {
+             if (yPos > pageHeight - 60) { // Check if we need a new page
+                doc.addPage();
+                yPos = margin;
+             }
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text(criterion.name, margin, yPos);
+            yPos += 6;
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            const requirementsText = doc.splitTextToSize(`Requirements: ${criterion.requirements}`, pageWidth - margin * 2);
+            doc.text(requirementsText, margin, yPos);
+            yPos += requirementsText.length * 4 + 2;
+
+            if (criterion.type === 'Credit') {
+                const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Points Awarded: ${points}`, margin, yPos);
+                yPos += 6;
+            }
+
+            const file = uploadedFiles[criterion.id];
+            if (file) {
+                try {
+                    const img = new Image();
+                    img.src = file.dataURL;
+                    // Note: The following line won't wait for the image to load. 
+                    // For more robust applications, you might need to handle image loading with promises.
+                    const imgProps = doc.getImageProperties(file.dataURL);
+                    const imgWidth = 50;
+                    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+                    if (yPos + imgHeight > pageHeight - margin) {
+                        doc.addPage();
+                        yPos = margin;
+                    }
+                    doc.addImage(file.dataURL, 'JPEG', margin, yPos, imgWidth, imgHeight);
+                    yPos += imgHeight + 5;
+                } catch (e) {
+                    doc.setFont('helvetica', 'italic');
+                    doc.text('Could not display image for this criterion.', margin, yPos);
+                    yPos += 6;
+                    console.error("Error adding image to PDF:", e);
+                }
+            }
+
+            yPos += 5;
+            doc.setLineWidth(0.2);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 5;
+        }
+
+        // --- Footer on each page ---
+        const pageCount = doc.internal.pages.length;
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            const date = new Date().toLocaleDateString();
+            doc.setFontSize(8);
+            doc.text(`Report generated by UltraCertify on ${date}`, margin, pageHeight - 10);
+            doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        }
+
+
+        doc.save('UltraCertify-Report.pdf');
 
     } catch (error) {
         console.error("Failed to generate PDF:", error);
@@ -460,7 +574,7 @@ const UltraCertifyPage: FC = () => {
                       )}
                       Suggest Applicable Credits
                     </Button>
-                    <Button onClick={handlePrint} variant="outline" disabled={isGeneratingPDF}>
+                    <Button onClick={handleGeneratePDF} variant="outline" disabled={isGeneratingPDF}>
                       {isGeneratingPDF ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
@@ -474,17 +588,6 @@ const UltraCertifyPage: FC = () => {
           </div>
         </div>
       </main>
-
-      {/* This div is used only for generating the PDF. It is positioned off-screen. */}
-      <div id="print-content" className="absolute -z-50 -top-[9999px] -left-[9999px] bg-white">
-        <ReportTemplate
-          projectData={projectData}
-          files={uploadedFiles}
-          score={currentScore}
-          maxScore={maxScore}
-          level={certificationLevel.level}
-        />
-      </div>
 
       <Dialog open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -511,3 +614,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
