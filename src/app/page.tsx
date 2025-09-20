@@ -187,9 +187,7 @@ const UltraCertifyPage: FC = () => {
   const { currentScore, maxScore, progress, certificationLevel } = React.useMemo(() => {
     const score = visibleCriteria.reduce((acc, criterion) => {
         if (criterion.type === 'Credit') {
-            const criterionScore = getCriterionScore(criterion);
-            const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-            return acc + Math.min(criterionScore, maxPoints);
+            return acc + getCriterionScore(criterion);
         }
         return acc;
     }, 0);
@@ -323,29 +321,34 @@ const UltraCertifyPage: FC = () => {
             doc.addPage();
             pageCount++;
             let yPos = margin;
-            const textContentX = margin + 50;
-            const contentWidth = pageWidth - textContentX - margin;
 
             // Header section for the criterion
+            doc.setFillColor(230, 230, 230); // Light grey background for title
+            doc.rect(margin, yPos, 80, 20, 'F');
+            doc.setTextColor(44, 90, 160); // Primary color
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
-            doc.text(criterion.name, margin, yPos + 5);
+            const titleLines = doc.splitTextToSize(criterion.name, 75);
+            doc.text(titleLines, margin + 5, yPos + (20 - titleLines.length * 5)/2 + 4);
+
+            const textContentX = margin + 85;
+            const contentWidth = pageWidth - textContentX - margin;
+            yPos += 2;
+
             doc.setFontSize(12);
             doc.setFont('helvetica', 'normal');
-            doc.text(`(${criterion.type})`, pageWidth - margin, yPos + 5, { align: 'right' });
-            yPos += 12;
-            doc.setLineWidth(0.2);
-            doc.line(margin, yPos, pageWidth - margin, yPos);
-            yPos += 10;
+            doc.setTextColor(0, 0, 0);
+            doc.text(`(${criterion.type})`, pageWidth - margin, yPos, { align: 'right' });
+            yPos += 8;
             
             // Details section
             const addDetail = (label: string, value: string) => {
               doc.setFontSize(10);
               doc.setFont('helvetica', 'bold');
-              doc.text(label, margin, yPos);
+              doc.text(label, textContentX, yPos);
               doc.setFont('helvetica', 'normal');
-              const textLines = doc.splitTextToSize(value, contentWidth + 40);
-              doc.text(textLines, margin + 35, yPos);
+              const textLines = doc.splitTextToSize(value, contentWidth - 30);
+              doc.text(textLines, textContentX + 35, yPos);
               yPos += textLines.length * 5 + 3;
             };
             
@@ -376,48 +379,54 @@ const UltraCertifyPage: FC = () => {
 
             const files = uploadedFiles[criterion.id] || [];
             if (files.length > 0) {
-                addDetail('Evidence:', '');
-                yPos -= 3; // Adjust space before images
+                yPos += 5; // Space before images
 
-                const availableHeight = pageHeight - yPos - margin - 10;
-                let imagesOnPage = 0;
+                let availableHeight = pageHeight - yPos - margin - 10;
                 let currentY = yPos;
-                let currentX = margin;
-                const maxImagesPerPage = 5;
-                const imagesToRender = files.slice(0, maxImagesPerPage);
+                const imagesPerPage = 6;
+                const imagesToRender = [...files];
 
-                const imgWidth = 80;
-                const imgHeight = 60;
-                const gap = 5;
-                let col = 0;
+                let imgWidth = 80;
+                let imgHeight = 60;
+                let gap = 5;
                 
-                for (let i = 0; i < imagesToRender.length; i++) {
-                    const file = imagesToRender[i];
-                    if (currentY + imgHeight > pageHeight - margin - 10) {
-                         // This logic is simplified; a full implementation might need new pages
-                         continue;
-                    }
+                const renderImageRow = (imageList: UploadedFile[], startX: number, startY: number, maxPerRow: number) => {
+                  let currentX = startX;
+                  for(const file of imageList){
                     try {
-                        doc.addImage(file.dataURL, 'JPEG', currentX, currentY, imgWidth, imgHeight);
-                        currentX += imgWidth + gap;
-                        col++;
-                        if (currentX + imgWidth > pageWidth - margin) {
-                            currentX = margin;
-                            currentY += imgHeight + gap;
-                            col = 0;
-                        }
+                        doc.addImage(file.dataURL, 'JPEG', currentX, startY, imgWidth, imgHeight);
                     } catch (e) {
                         console.error("Error adding image:", e);
-                        doc.text("Error rendering image.", currentX + 5, currentY + 10);
+                        doc.text("Error rendering image.", currentX + 5, startY + 10);
                     }
+                    currentX += imgWidth + gap;
+                  }
                 }
-                 if (files.length > maxImagesPerPage) {
-                    doc.addPage();
-                    pageCount++;
-                    yPos = margin;
-                    doc.text(`Additional Evidence for: ${criterion.name}`, pageWidth / 2, yPos, {align: 'center'});
-                    yPos += 10;
-                    // Simplified: Render remaining images here with similar logic
+                
+                const imageChunks: UploadedFile[][] = [];
+                for (let i = 0; i < imagesToRender.length; i += imagesPerPage) {
+                    imageChunks.push(imagesToRender.slice(i, i + imagesPerPage));
+                }
+
+                for (let i = 0; i < imageChunks.length; i++) {
+                    if (i > 0) {
+                        doc.addPage();
+                        pageCount++;
+                        currentY = margin;
+                        doc.setFontSize(14);
+                        doc.text(`Additional Evidence for: ${criterion.name}`, pageWidth / 2, currentY, {align: 'center'});
+                        currentY += 10;
+                    }
+                    
+                    const chunk = imageChunks[i];
+                    if (chunk.length <= 3) {
+                       renderImageRow(chunk, margin, currentY, 3);
+                    } else {
+                       const row1 = chunk.slice(0,3);
+                       const row2 = chunk.slice(3);
+                       renderImageRow(row1, margin, currentY, 3);
+                       renderImageRow(row2, margin, currentY + imgHeight + gap, 3);
+                    }
                 }
             }
 
@@ -485,7 +494,7 @@ const UltraCertifyPage: FC = () => {
                                {criterion.type === 'Credit' && (
                                 <>
                                   <p className="text-sm font-medium text-primary mt-2">
-                                    Points: {Math.min(currentPoints, maxPoints)} / {maxPoints}
+                                    Points: {currentPoints} / {maxPoints}
                                   </p>
 
                                   {!options && (
@@ -766,3 +775,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
