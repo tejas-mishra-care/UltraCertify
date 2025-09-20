@@ -183,7 +183,7 @@ const UltraCertifyPage: FC = () => {
       return 0;
   }, [selectedOptions]);
 
-  const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
+    const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
     const applicableCriteria = criteria.filter(c => c.applicability[buildingType]);
     
     const score = applicableCriteria.reduce((acc, criterion) => {
@@ -243,11 +243,10 @@ const UltraCertifyPage: FC = () => {
     });
 
     try {
-        const doc = new jsPDF('p', 'mm', 'a4');
+        const doc = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 15;
-        let yPos = margin;
         let pageCount = 1;
 
         const addFooter = () => {
@@ -256,29 +255,18 @@ const UltraCertifyPage: FC = () => {
             doc.text(`Page ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
         };
         
-        const checkPageBreak = (spaceNeeded: number) => {
-            if (yPos + spaceNeeded > pageHeight - margin - 10) { // -10 for footer
-                addFooter();
-                doc.addPage();
-                pageCount++;
-                yPos = margin;
-            }
-        };
-
         // --- PDF Header ---
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('UltraCertify Report', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 8;
+        doc.text('UltraCertify Report', pageWidth / 2, margin + 5, { align: 'center' });
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
-        doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
+        doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, margin + 15, { align: 'center' });
         doc.setLineWidth(0.5);
-        doc.line(margin, yPos, pageWidth - margin, yPos);
-        yPos += 10;
+        doc.line(margin, margin + 20, pageWidth - margin, margin + 20);
 
         // --- Project Details ---
+        let yPos = margin + 30;
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text('Project Details', margin, yPos);
@@ -298,122 +286,123 @@ const UltraCertifyPage: FC = () => {
             { label: 'Landscape Area', value: `${projectData.landscapeArea} sq. m` },
         ];
         
-        details.forEach(detail => {
-            checkPageBreak(7);
+        const col1X = margin;
+        const col2X = pageWidth / 2;
+        let detailY = yPos;
+
+        details.forEach((detail, index) => {
+            const currentX = index % 2 === 0 ? col1X : col2X;
+            if (index > 0 && index % 2 === 0) {
+                detailY += 7;
+            }
             doc.setFont('helvetica', 'bold');
-            doc.text(`${detail.label}:`, margin, yPos);
+            doc.text(`${detail.label}:`, currentX, detailY);
             doc.setFont('helvetica', 'normal');
-            doc.text(detail.value || '-', margin + 60, yPos);
-            yPos += 7;
+            doc.text(detail.value || '-', currentX + 50, detailY);
         });
-        
-        yPos += 5;
-        doc.line(margin, yPos, pageWidth - margin, yPos);
-        yPos += 10;
+
+        yPos = detailY + 15;
 
         // --- Certification Summary ---
-        checkPageBreak(30);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text('Certification Summary', margin, yPos);
         yPos += 8;
         doc.setFontSize(12);
-        doc.text(`Total Score: ${currentScore} / ${maxScore}`, margin, yPos);
+        doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
         yPos += 8;
-        doc.text(`Certification Level: ${certificationLevel.level}`, margin, yPos);
-        yPos += 10;
-        doc.line(margin, yPos, pageWidth - margin, yPos);
-        yPos += 10;
+        doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
         
-        // --- Achieved Criteria ---
-        checkPageBreak(15);
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Achieved Criteria', margin, yPos);
-        yPos += 8;
+        addFooter();
         
         const achievedCriteria = criteria.filter(c => {
             const selection = selectedOptions[c.id];
-            return (
-                c.applicability[buildingType] &&
-                (
-                    (Array.isArray(selection) && selection.length > 0) ||
-                    (typeof selection === 'string' && selection !== '' && selection !== 'false')
-                )
-            );
+            const hasSelection = (Array.isArray(selection) && selection.length > 0) || (typeof selection === 'string' && selection !== '' && selection !== 'false');
+            const hasFiles = (uploadedFiles[c.id] || []).length > 0;
+            return c.applicability[buildingType] && (hasSelection || (c.type === 'Mandatory' && hasFiles));
         });
 
-        if (achievedCriteria.length === 0) {
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'italic');
-            checkPageBreak(10);
-            doc.text('No criteria have been marked as achieved.', margin, yPos);
+        for (const criterion of achievedCriteria) {
+            const files = uploadedFiles[criterion.id] || [];
+            
+            // Create a page for the criterion text itself
+            doc.addPage();
+            pageCount++;
+            yPos = margin;
+            
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(criterion.name, pageWidth / 2, yPos, { align: 'center' });
             yPos += 10;
-        } else {
-            for (const criterion of achievedCriteria) {
-                 const points = getCriterionScore(criterion, buildingType);
-                 if (points === 0 && criterion.type === 'Credit') continue;
-
-                 const requirementsText = doc.splitTextToSize(`Requirements: ${criterion.requirements}`, pageWidth - margin * 2);
-                 const spaceForText = requirementsText.length * 4 + 15 + (criterion.type === 'Credit' ? 6 : 0);
-                 checkPageBreak(spaceForText);
-
-                doc.setFontSize(12);
+            doc.setLineWidth(0.2);
+            doc.line(margin, yPos, pageWidth - margin, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Requirements:', margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            const reqText = doc.splitTextToSize(criterion.requirements, pageWidth - margin * 2);
+            doc.text(reqText, margin, yPos + 5);
+            yPos += reqText.length * 4 + 8;
+            
+            if (criterion.type === 'Credit') {
                 doc.setFont('helvetica', 'bold');
-                doc.text(criterion.name, margin, yPos);
-                yPos += 6;
+                const points = getCriterionScore(criterion, buildingType);
+                const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+                doc.text(`Points Awarded: ${points} / ${maxPoints}`, margin, yPos);
+                yPos += 8;
+            }
 
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'normal');
-                doc.text(requirementsText, margin, yPos);
-                yPos += requirementsText.length * 4 + 2;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Status:', margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(files.length > 0 ? 'Evidence Provided' : 'No Evidence Uploaded', margin + 20, yPos);
 
-                if (criterion.type === 'Credit') {
+            addFooter();
+
+            // Create a new page for each image
+            for(const file of files) {
+                try {
+                    doc.addPage();
+                    pageCount++;
+                    yPos = margin;
+
+                    doc.setFontSize(12);
                     doc.setFont('helvetica', 'bold');
-                    doc.text(`Points Awarded: ${points}`, margin, yPos);
-                    yPos += 6;
-                }
-                
-                yPos += 2;
-                doc.setFont('helvetica', 'italic');
-                doc.text('Uploaded Evidence:', margin, yPos);
-                yPos += 5;
+                    doc.text(`Evidence for: ${criterion.name}`, pageWidth/2, yPos, {align: 'center'});
+                    yPos += 10;
 
-                const files = uploadedFiles[criterion.id] || [];
+                    const imgProps = doc.getImageProperties(file.dataURL);
+                    const availableWidth = pageWidth - margin * 2;
+                    const availableHeight = pageHeight - margin * 2 - 20; //-20 for header/footer
 
-                if(files.length === 0){
-                    doc.setFont('helvetica', 'normal');
-                    doc.text('No files uploaded for this criterion.', margin + 5, yPos);
-                    yPos += 6;
-                } else {
-                   for(const file of files) {
-                        try {
-                            const imgProps = doc.getImageProperties(file.dataURL);
-                            const imgWidth = 50;
-                            const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-                            
-                            checkPageBreak(imgHeight + 10);
-                            
-                            doc.addImage(file.dataURL, 'JPEG', margin, yPos, imgWidth, imgHeight);
-                            yPos += imgHeight + 5;
-                        } catch (e) {
-                            checkPageBreak(10);
-                            doc.setFont('helvetica', 'italic');
-                            doc.text('Could not display an image for this criterion.', margin, yPos);
-                            yPos += 6;
-                            console.error("Error adding image to PDF:", e);
-                        }
+                    let imgWidth = imgProps.width;
+                    let imgHeight = imgProps.height;
+                    
+                    const aspectRatio = imgWidth / imgHeight;
+
+                    if (imgWidth > availableWidth) {
+                        imgWidth = availableWidth;
+                        imgHeight = imgWidth / aspectRatio;
                     }
+
+                    if (imgHeight > availableHeight) {
+                        imgHeight = availableHeight;
+                        imgWidth = imgHeight * aspectRatio;
+                    }
+
+                    const xOffset = (pageWidth - imgWidth) / 2;
+                    const yOffset = (pageHeight - imgHeight) / 2;
+                    
+                    doc.addImage(file.dataURL, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
+                    addFooter();
+                } catch (e) {
+                    console.error("Error adding image to PDF:", e);
                 }
-                
-                yPos += 5;
-                doc.setLineWidth(0.2);
-                doc.line(margin, yPos, pageWidth - margin, yPos);
-                yPos += 5;
             }
         }
         
-        addFooter();
         doc.save('UltraCertify-Report.pdf');
 
     } catch (error) {
@@ -502,7 +491,7 @@ const UltraCertifyPage: FC = () => {
                                   
                                   {options && criterion.selectionType !== 'multiple' && (
                                      <div className="mt-2">
-                                        <Select onValueChange={(value) => handleOptionChange(criterion.id, value)}>
+                                        <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
                                             <SelectTrigger className="w-full md:w-[280px]">
                                                 <SelectValue placeholder="Select achieved level..." />
                                             </SelectTrigger>
@@ -767,3 +756,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
