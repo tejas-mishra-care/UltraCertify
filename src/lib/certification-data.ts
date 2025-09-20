@@ -38,6 +38,18 @@ export const criteria: Criterion[] = [
     requirements: 'Provide any two features mentioned below. For each feature two points (max 4 points): 1. Courtyard 2. Vernacular materials 3. Local Vernacular Elements 4. Any other passive cooling/Heating system 5. Skylights',
     documents: 'Concept description of features, Photographs of the passive architecture measure',
     points: { New: 4, Existing: 2 },
+    options: {
+      New: [
+        { label: 'Select option', points: 0 },
+        { label: 'One Feature', points: 2 },
+        { label: 'Two Features', points: 4 },
+      ],
+      Existing: [
+        { label: 'Select option', points: 0 },
+        { label: 'One Feature', points: 1 },
+        { label: 'Two Features', points: 2 },
+      ]
+    }
   },
   {
     id: 'top-soil-preservation',
@@ -56,6 +68,11 @@ export const criteria: Criterion[] = [
     requirements: 'Provide minimum of 3 ft setback or as per local norms whichever is higher on 2 sides (1 point) More than 2 sides (2 points)',
     documents: 'Photographs of setback areas',
     points: 2,
+    options: [
+        { label: 'Select option', points: 0 },
+        { label: '2 sides', points: 1 },
+        { label: 'More than 2 sides', points: 2 },
+    ]
   },
   {
     id: 'basic-amenities',
@@ -74,6 +91,13 @@ export const criteria: Criterion[] = [
     requirements: 'Provide the vegetation either on mother earth/ built - up structures as follows: 30 sq.ft - 1 Point, 50 sq.ft - 2 Points, 75 sq.ft - 3 Points, 100 sq.ft - 4 Points. Note: Potted plants are not considered.',
     documents: 'Photographs of Landscape and natural topography. Provide the Total Site Area and Landscape Area.',
     points: 4,
+    options: [
+        { label: 'Select option', points: 0 },
+        { label: '30 sq.ft', points: 1 },
+        { label: '50 sq.ft', points: 2 },
+        { label: '75 sq.ft', points: 3 },
+        { label: '100 sq.ft', points: 4 },
+    ]
   },
   {
     id: 'vegetables-fruits',
@@ -137,6 +161,11 @@ export const criteria: Criterion[] = [
     requirements: 'Implement measures during construction. Any 2 measures - 1 Point. Any 4 measures - 2 Points. (Barrication, Dust Suppression, Material Stacking, Drinking Water and First-Aid, Designated waste material storage space, Soil cover with tarpaulin, Toilet and rest areas for workers)',
     documents: 'Photographs of the each measure implemented.',
     points: 2,
+    options: [
+        { label: 'Select option', points: 0 },
+        { label: 'Any 2 measures', points: 1 },
+        { label: 'Any 4 measures', points: 2 },
+    ]
   },
   {
     id: 'white-finish',
@@ -155,6 +184,11 @@ export const criteria: Criterion[] = [
     requirements: 'Rainwater harvesting system to capture at least 750 Litres (2 points) & Reuse provision for harvested water (2 points). Note: For an existing well or borewell the project shall be awarded 4 points.',
     documents: 'Photograph of rainwater harvesting pits, Reuse application',
     points: 4,
+    options: [
+        { label: 'Select option', points: 0 },
+        { label: 'Harvesting (750L)', points: 2 },
+        { label: 'Harvesting & Reuse / Existing Well', points: 4 },
+    ]
   },
   {
     id: 'water-saving-fixtures',
@@ -164,6 +198,13 @@ export const criteria: Criterion[] = [
     requirements: 'Provide efficient water fixtures: Dual flush cistern (3 pts), Tap with aerators (2 pts), Showers with aerators (2 pts), Health faucet with aerators (1 pt)',
     documents: 'Photographs of taps, health faucet, showers with aerators, and dual flush',
     points: 8,
+     options: [
+        { label: 'Select achieved fixtures', points: 0 },
+        { label: 'Dual flush cistern', points: 3 },
+        { label: 'Tap with aerators', points: 2 },
+        { label: 'Showers with aerators', points: 2 },
+        { label: 'Health faucet with aerators', points: 1 },
+    ]
   },
   {
     id: 'water-metering-controllers',
@@ -182,6 +223,12 @@ export const criteria: Criterion[] = [
     requirements: 'Implement energy efficiency measures. Wall Assembly: AAC Blocks/Flyash/Equivalent thermal properties (3 pts). Roof Assembly: RCC+Brickbat Coba/Filler slabs/Insulation/Equivalent thermal properties (2 pts).',
     documents: 'Construction photographs of blocks, Photographs and details of roof assembly',
     points: 5,
+    options: [
+        { label: 'Select option', points: 0 },
+        { label: 'Wall Assembly', points: 3 },
+        { label: 'Roof Assembly', points: 2 },
+        { label: 'Both Wall & Roof Assembly', points: 5 },
+    ]
   },
   {
     id: 'energy-efficient-appliances',
@@ -218,6 +265,12 @@ export const criteria: Criterion[] = [
     requirements: 'Install on-site renewable solar energy system. 0.5 kW (1 pt), 1.5 kW (3 pts), 2.5 kW (5 pts).',
     documents: 'Purchase invoice of solar panels, Photographs of installed solar panels',
     points: 5,
+    options: [
+        { label: 'Select capacity', points: 0 },
+        { label: '0.5 kW', points: 1 },
+        { label: '1.5 kW', points: 3 },
+        { label: '2.5 kW', points: 5 },
+    ]
   },
   {
     id: 'ev-charging',
@@ -254,6 +307,12 @@ export const criteria: Criterion[] = [
     requirements: 'Procure materials from manufacturers within 500 KM range. 30% of total cost (1 pt), 40% (2 pts), 50% (3 pts).',
     documents: 'Costing sheet of the materials (Annexure 3), Google map showing distance of the manufacturers',
     points: 3,
+     options: [
+        { label: 'Select percentage', points: 0 },
+        { label: '30% of total cost', points: 1 },
+        { label: '40% of total cost', points: 2 },
+        { label: '50% of total cost', points: 3 },
+    ]
   },
   {
     id: 'daylighting',
@@ -263,6 +322,13 @@ export const criteria: Criterion[] = [
     requirements: 'Ensure a minimum daylighting of 110 Lux. 25% of areas (1 pt), 50% (2 pts), 75% (3 pts), 95% (4 pts).',
     documents: 'Floor plans, door/window schedules, elevations, photographs, Daylighting calculation template(Annexure1)',
     points: 4,
+    options: [
+        { label: 'Select area percentage', points: 0 },
+        { label: '25% of areas', points: 1 },
+        { label: '50% of areas', points: 2 },
+        { label: '75% of areas', points: 3 },
+        { label: '95% of areas', points: 4 },
+    ]
   },
   {
     id: 'ventilation',
@@ -272,6 +338,12 @@ export const criteria: Criterion[] = [
     requirements: 'Provide openable windows to the exterior. 5% of carpet area (1 pt), 7.5% (2 pts), 10% (3 pts).',
     documents: 'Floor plans, door/window schedules, elevations, photographs, Ventilation calculation template(Annexure2)',
     points: 3,
+    options: [
+        { label: 'Select openable area', points: 0 },
+        { label: '5% of carpet area', points: 1 },
+        { label: '7.5% of carpet area', points: 2 },
+        { label: '10% of carpet area', points: 3 },
+    ]
   },
   {
     id: 'exhaust-system',

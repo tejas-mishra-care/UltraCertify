@@ -1,5 +1,10 @@
 export type BuildingType = 'New' | 'Existing';
 
+export type CriterionOption = {
+  label: string;
+  points: number;
+};
+
 export type Criterion = {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export type Criterion = {
   requirements: string;
   documents: string;
   points: number | Record<BuildingType, number>;
+  options?: CriterionOption[] | Record<BuildingType, CriterionOption[]>;
 };
 
 export type CertificationLevel = {
