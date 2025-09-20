@@ -152,7 +152,9 @@ const UltraCertifyPage: FC = () => {
       if (criterion.type !== 'Credit') return 0;
 
       const selection = selectedOptions[criterion.id];
+      const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
       let options: CriterionOption[] | undefined;
+
       if (criterion.options) {
           if (Array.isArray(criterion.options)) {
               options = criterion.options;
@@ -162,10 +164,11 @@ const UltraCertifyPage: FC = () => {
       }
 
       if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
-          return selection.reduce((acc, sel) => {
+          const calculatedPoints = selection.reduce((acc, sel) => {
               const option = options?.find(opt => opt.label === sel);
               return acc + (option?.points || 0);
           }, 0);
+          return Math.min(calculatedPoints, maxPoints);
       }
       
       if (typeof selection === 'string' && options) {
@@ -174,8 +177,7 @@ const UltraCertifyPage: FC = () => {
       }
       
       if (!criterion.options && selection === 'true') {
-          const points = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-          return points || 0;
+          return maxPoints || 0;
       }
 
       return 0;
@@ -185,13 +187,13 @@ const UltraCertifyPage: FC = () => {
     const applicableCriteria = criteria.filter(c => c.applicability[buildingType]);
     
     const score = applicableCriteria.reduce((acc, criterion) => {
-      return acc + getCriterionScore(criterion, buildingType);
+        return acc + getCriterionScore(criterion, buildingType);
     }, 0);
 
     const max = applicableCriteria.reduce((acc, c) => {
         if (c.type === 'Credit') {
             const points = typeof c.points === 'number' ? c.points : c.points[buildingType];
-            return acc + points;
+            return acc + (points || 0);
         }
         return acc;
     }, 0);
@@ -204,6 +206,7 @@ const UltraCertifyPage: FC = () => {
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
   }, [selectedOptions, buildingType, getCriterionScore]);
+
 
   const handleSuggestCredits = async () => {
     const images = Object.values(uploadedFiles).flat().map(file => file.dataURL);
@@ -519,6 +522,7 @@ const UltraCertifyPage: FC = () => {
                                         <div key={opt.label} className="flex items-center space-x-2">
                                           <Checkbox
                                             id={`${criterion.id}-${opt.label}`}
+                                            checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
                                             onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
                                           />
                                           <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
