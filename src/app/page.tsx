@@ -58,7 +58,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
 
-import type { UploadedFile, ProjectData, CriterionOption } from "@/lib/types";
+import type { UploadedFile, ProjectData, CriterionOption, Criterion } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
@@ -147,21 +147,18 @@ const UltraCertifyPage: FC = () => {
     });
   }, []);
 
+  const getCriterionOptions = useCallback((criterion: Criterion) => {
+      if (!criterion.options) return undefined;
+      return Array.isArray(criterion.options) ? criterion.options : criterion.options[buildingType];
+  }, [buildingType]);
 
-  const getCriterionScore = useCallback((criterion: (typeof criteria)[0], buildingType: 'New' | 'Existing') => {
+
+  const getCriterionScore = useCallback((criterion: Criterion) => {
       if (criterion.type !== 'Credit') return 0;
 
       const selection = selectedOptions[criterion.id];
       const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-      let options: CriterionOption[] | undefined;
-
-      if (criterion.options) {
-          if (Array.isArray(criterion.options)) {
-              options = criterion.options;
-          } else {
-              options = criterion.options[buildingType];
-          }
-      }
+      const options = getCriterionOptions(criterion);
 
       if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
           const calculatedPoints = selection.reduce((acc, sel) => {
@@ -181,16 +178,18 @@ const UltraCertifyPage: FC = () => {
       }
 
       return 0;
-  }, [selectedOptions]);
+  }, [selectedOptions, getCriterionOptions, buildingType]);
 
-    const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
-    const applicableCriteria = criteria.filter(c => c.applicability[buildingType]);
-    
-    const score = applicableCriteria.reduce((acc, criterion) => {
-        return acc + getCriterionScore(criterion, buildingType);
+  const visibleCriteria = useMemo(() => {
+    return criteria.filter(c => c.applicability[buildingType]);
+  }, [buildingType]);
+
+  const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
+    const score = visibleCriteria.reduce((acc, criterion) => {
+        return acc + getCriterionScore(criterion);
     }, 0);
 
-    const max = applicableCriteria.reduce((acc, c) => {
+    const max = visibleCriteria.reduce((acc, c) => {
         if (c.type === 'Credit') {
             const points = typeof c.points === 'number' ? c.points : c.points[buildingType];
             return acc + (points || 0);
@@ -205,7 +204,7 @@ const UltraCertifyPage: FC = () => {
       .find((l) => score >= l.minScore[buildingType]) || { level: 'Uncertified', color: 'text-gray-500', minScore: { New: 0, Existing: 0 } };
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
-  }, [selectedOptions, buildingType, getCriterionScore]);
+  }, [visibleCriteria, getCriterionScore, buildingType]);
 
 
   const handleSuggestCredits = async () => {
@@ -315,16 +314,7 @@ const UltraCertifyPage: FC = () => {
         
         addFooter();
         
-        const achievedCriteria = criteria.filter(c => {
-            const selection = selectedOptions[c.id];
-            const hasSelection = (Array.isArray(selection) && selection.length > 0) || (typeof selection === 'string' && selection !== '' && selection !== 'false');
-            const hasFiles = (uploadedFiles[c.id] || []).length > 0;
-            return c.applicability[buildingType] && (hasSelection || (c.type === 'Mandatory' && hasFiles));
-        });
-
-        for (const criterion of achievedCriteria) {
-            const files = uploadedFiles[criterion.id] || [];
-            
+        for (const criterion of visibleCriteria) {
             // Create a page for the criterion text itself
             doc.addPage();
             pageCount++;
@@ -333,6 +323,10 @@ const UltraCertifyPage: FC = () => {
             doc.setFontSize(16);
             doc.setFont('helvetica', 'bold');
             doc.text(criterion.name, pageWidth / 2, yPos, { align: 'center' });
+            yPos += 8;
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`(${criterion.type})`, pageWidth / 2, yPos, { align: 'center' });
             yPos += 10;
             doc.setLineWidth(0.2);
             doc.line(margin, yPos, pageWidth - margin, yPos);
@@ -344,24 +338,49 @@ const UltraCertifyPage: FC = () => {
             doc.setFont('helvetica', 'normal');
             const reqText = doc.splitTextToSize(criterion.requirements, pageWidth - margin * 2);
             doc.text(reqText, margin, yPos + 5);
-            yPos += reqText.length * 4 + 8;
-            
+            yPos += reqText.length * 4 + 10;
+
+            let statusText = "Not Attempted";
+            const selection = selectedOptions[criterion.id];
+            const hasFiles = (uploadedFiles[criterion.id] || []).length > 0;
+
             if (criterion.type === 'Credit') {
-                doc.setFont('helvetica', 'bold');
-                const points = getCriterionScore(criterion, buildingType);
+                const points = getCriterionScore(criterion);
                 const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+                doc.setFont('helvetica', 'bold');
                 doc.text(`Points Awarded: ${points} / ${maxPoints}`, margin, yPos);
                 yPos += 8;
-            }
 
+                if (Array.isArray(selection) && selection.length > 0) {
+                   statusText = `Selected: ${selection.join(', ')}`;
+                } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
+                    const options = getCriterionOptions(criterion);
+                    const selectedOption = options?.find(opt => opt.label === selection);
+                    statusText = selectedOption ? `Selected: ${selectedOption.label}` : "Achieved";
+                }
+
+            } else { // Mandatory
+                if (hasFiles) {
+                    statusText = "Evidence Provided";
+                }
+            }
+             
             doc.setFont('helvetica', 'bold');
             doc.text('Status:', margin, yPos);
             doc.setFont('helvetica', 'normal');
-            doc.text(files.length > 0 ? 'Evidence Provided' : 'No Evidence Uploaded', margin + 20, yPos);
+            doc.text(statusText, margin + 20, yPos);
+            yPos += 8;
+
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('Evidence:', margin, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(hasFiles ? 'See following page(s)' : 'No Evidence Uploaded', margin + 20, yPos);
 
             addFooter();
 
-            // Create a new page for each image
+            // Create a new page for each image associated with this criterion
+            const files = uploadedFiles[criterion.id] || [];
             for(const file of files) {
                 try {
                     doc.addPage();
@@ -375,18 +394,18 @@ const UltraCertifyPage: FC = () => {
 
                     const imgProps = doc.getImageProperties(file.dataURL);
                     const availableWidth = pageWidth - margin * 2;
-                    const availableHeight = pageHeight - margin * 2 - 20; //-20 for header/footer
+                    const availableHeight = pageHeight - margin * 2 - 25; // Extra space for header/footer
 
                     let imgWidth = imgProps.width;
                     let imgHeight = imgProps.height;
                     
                     const aspectRatio = imgWidth / imgHeight;
 
+                    // Scale image to fit within the available space while maintaining aspect ratio
                     if (imgWidth > availableWidth) {
                         imgWidth = availableWidth;
                         imgHeight = imgWidth / aspectRatio;
                     }
-
                     if (imgHeight > availableHeight) {
                         imgHeight = availableHeight;
                         imgWidth = imgHeight * aspectRatio;
@@ -418,10 +437,6 @@ const UltraCertifyPage: FC = () => {
   };
 
 
-  const visibleCriteria = useMemo(() => {
-    return criteria.filter(c => c.applicability[buildingType]);
-  }, [buildingType]);
-
   return (
     <>
       <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
@@ -449,16 +464,9 @@ const UltraCertifyPage: FC = () => {
                     <div className="space-y-4">
                       {visibleCriteria.map((criterion, index) => {
                         const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
-                        let options: CriterionOption[] | undefined;
-                        if(criterion.options) {
-                           if(Array.isArray(criterion.options)) {
-                               options = criterion.options;
-                           } else {
-                               options = criterion.options[buildingType];
-                           }
-                        }
+                        const options = getCriterionOptions(criterion);
 
-                        const currentPoints = getCriterionScore(criterion, buildingType);
+                        const currentPoints = getCriterionScore(criterion);
                         const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
                         
                         return (
