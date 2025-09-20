@@ -63,8 +63,9 @@ import { criteria, certificationLevels } from "@/lib/certification-data";
 import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
 import { useToast } from "@/hooks/use-toast";
-import { ultratechLogoBase64 } from "@/lib/ultratech-logo";
 import Image from "next/image";
+import ultratechLogo from "@/lib/ultratech-logo.png";
+
 
 const projectSchema = z.object({
   registrationNumber: z.string().min(1, "Registration number is required"),
@@ -239,6 +240,19 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
+  const getBase64Image = (img: HTMLImageElement): string => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL("image/png");
+          return dataURL;
+      }
+      return '';
+  };
+
   const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true);
     toast({
@@ -247,6 +261,11 @@ const UltraCertifyPage: FC = () => {
     });
 
     try {
+        const logoImg = document.createElement('img');
+        logoImg.src = ultratechLogo.src;
+        await new Promise(resolve => { logoImg.onload = resolve });
+        const ultratechLogoBase64 = getBase64Image(logoImg);
+
         const doc = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -260,7 +279,9 @@ const UltraCertifyPage: FC = () => {
         };
         
         // --- PDF Header ---
-        doc.addImage(ultratechLogoBase64, 'PNG', margin, margin - 5, 40, 15);
+        if (ultratechLogoBase64) {
+            doc.addImage(ultratechLogoBase64, 'PNG', margin, margin - 5, 40, 15);
+        }
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
         doc.text('UltraCertify Report', pageWidth / 2, margin + 5, { align: 'center' });
@@ -464,7 +485,7 @@ const UltraCertifyPage: FC = () => {
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
              <div className="flex items-center gap-4">
-                <Image src={ultratechLogoBase64} alt="UltraTech Logo" width={200} height={69} />
+                <Image src={ultratechLogo} alt="UltraTech Logo" width={200} height={69} />
              </div>
              <div className="flex flex-col items-end text-right">
                 <span className="font-semibold text-lg text-primary">UltraCertify</span>
