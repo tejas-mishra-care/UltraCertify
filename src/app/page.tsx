@@ -64,6 +64,7 @@ import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
 import { useToast } from "@/hooks/use-toast";
 import { ultratechLogoBase64 } from "@/lib/ultratech-logo";
+import Image from "next/image";
 
 const projectSchema = z.object({
   registrationNumber: z.string().min(1, "Registration number is required"),
@@ -383,8 +384,6 @@ const UltraCertifyPage: FC = () => {
             if (files.length > 0) {
                 yPos += 5; // Space before images
 
-                let availableHeight = pageHeight - yPos - margin - 10;
-                let currentY = yPos;
                 const imagesPerPage = 6;
                 const imagesToRender = [...files];
 
@@ -392,7 +391,7 @@ const UltraCertifyPage: FC = () => {
                 let imgHeight = 60;
                 let gap = 5;
                 
-                const renderImageRow = (imageList: UploadedFile[], startX: number, startY: number, maxPerRow: number) => {
+                const renderImageRow = (imageList: UploadedFile[], startX: number, startY: number) => {
                   let currentX = startX;
                   for(const file of imageList){
                     try {
@@ -414,20 +413,29 @@ const UltraCertifyPage: FC = () => {
                     if (i > 0) {
                         doc.addPage();
                         pageCount++;
-                        currentY = margin;
+                        let currentY = margin;
                         doc.setFontSize(14);
                         doc.text(`Additional Evidence for: ${criterion.name}`, pageWidth / 2, currentY, {align: 'center'});
                         currentY += 10;
-                    }
-                    
-                    const chunk = imageChunks[i];
-                    if (chunk.length <= 3) {
-                       renderImageRow(chunk, margin, currentY, 3);
+                        const chunk = imageChunks[i];
+                        if (chunk.length <= 3) {
+                           renderImageRow(chunk, margin, currentY);
+                        } else {
+                           const row1 = chunk.slice(0,3);
+                           const row2 = chunk.slice(3);
+                           renderImageRow(row1, margin, currentY);
+                           renderImageRow(row2, margin, currentY + imgHeight + gap);
+                        }
                     } else {
-                       const row1 = chunk.slice(0,3);
-                       const row2 = chunk.slice(3);
-                       renderImageRow(row1, margin, currentY, 3);
-                       renderImageRow(row2, margin, currentY + imgHeight + gap, 3);
+                        const chunk = imageChunks[i];
+                        if (chunk.length <= 3) {
+                           renderImageRow(chunk, margin, yPos);
+                        } else {
+                           const row1 = chunk.slice(0,3);
+                           const row2 = chunk.slice(3);
+                           renderImageRow(row1, margin, yPos);
+                           renderImageRow(row2, margin, yPos + imgHeight + gap);
+                        }
                     }
                 }
             }
@@ -456,37 +464,7 @@ const UltraCertifyPage: FC = () => {
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
              <div className="flex items-center gap-4">
-                <svg
-                  width="200"
-                  height="auto"
-                  viewBox="0 0 493 173"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect width="493" height="173" fill="#FFED00"/>
-                  <path d="M110.165 41.7428L151.785 107.593L153.21 107.418L111.94 41.7428H110.165Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M129.845 40.8678H93.8599V133.153H129.845V112.503H112.56V89.0428H128.32V69.7678H112.56V40.8678Z" fill="#2D2A26"/>
-                  <path d="M369.34 40.8678L328.72 106.718L330.145 106.543L371.415 40.8678H369.34Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M435.531 41.7428V132.278H455.511V41.7428H435.531Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M196.485 40.8678H160.5V133.153H196.485V112.503H179.2V89.0428H194.96V69.7678H179.2V40.8678Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M389.01 40.8678H353.025V133.153H389.01V112.503H371.725V89.0428H387.485V69.7678H371.725V40.8678Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M228.02 41.7428L211.37 84.1178C214.17 84.1178 217.145 84.1728 219.945 84.2278L227.285 64.9528L239.06 41.7428H228.02Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M307.72 41.7428H296.68L279.79 84.2278C282.59 84.1728 285.565 84.1178 288.365 84.1178L307.72 41.7428Z" fill="#2D2A26"/>
-                  <path d="M246.63 41.7428L234.855 64.9528L242.195 84.2278C244.995 84.1728 247.97 84.1178 250.77 84.1178L262.37 62.9128L259.04 54.3528L246.63 41.7428Z" fill="#2D2A26"/>
-                  <path d="M285.935 84.2278L293.275 64.9528L281.499 41.7428L268.454 54.3528L271.784 62.9128L279.009 84.1178C281.204 84.1178 283.574 84.1728 285.935 84.2278Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M72.0049 41.7428L30.3849 107.593L28.9599 107.418L70.2299 41.7428H72.0049Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M31.2599 90.0428L30.3849 107.593H45.7799L46.6549 90.0428H31.2599Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M208.56 90.0428L207.685 107.593H223.08L223.955 90.0428H208.56Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M259.04 90.0428L258.165 107.593H273.56L274.435 90.0428H259.04Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M309.805 90.0428L308.93 107.593H324.325L325.2 90.0428H309.805Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M360.57 90.0428L359.695 107.593H375.09L375.965 90.0428H360.57Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M411.335 90.0428L410.46 107.593H425.855L426.73 90.0428H411.335Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M158.8 90.0428L157.925 107.593H173.32L174.195 90.0428H158.8Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M82.7149 90.0428L81.8399 107.593H97.2349L98.1099 90.0428H82.7149Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M27.535 90.0428H411.755V107.593H27.535V90.0428Z" fill="#2D2A26"/>
-                  <path d="M46.6549 90.0428L45.7799 107.593H64.0499L98.1099 107.593H119.535L157.925 107.593H177.07L207.685 107.593H225.79L258.165 107.593H276.27L308.93 107.593H327.035L359.695 107.593H377.8L410.46 107.593H426.73V90.0428H411.335H375.965H360.57H325.2H309.805H274.435H259.04H223.955H208.56H174.195H158.8H98.1099H82.7149H46.6549Z" fill="#2D2A26"/>
-                  <path fillRule="evenodd" clipRule="evenodd" d="M129.585 144.153C129.585 149.208 123.63 153.278 116.345 153.278C109.06 153.278 103.105 149.208 103.105 144.153C103.105 139.098 109.06 135.028 116.345 135.028C123.63 135.028 129.585 139.098 129.585 144.153ZM146.125 135.903V152.343H140.21V135.903H146.125ZM155.855 135.903H168.04L161.95 144.383L168.04 152.343H155.855L152.68 147.288L149.505 144.383L152.68 141.478L155.855 135.903ZM179.319 135.903H185.234V149.733H196.274V152.343H179.319V135.903ZM203.469 135.903H209.384V152.343H203.469V135.903ZM217.204 144.153C217.204 149.208 211.249 153.278 203.964 153.278C196.679 153.278 190.724 149.208 190.724 144.153C190.724 139.098 196.679 135.028 203.964 135.028C211.249 135.028 217.204 139.098 217.204 144.153ZM228.694 135.903L222.779 152.343H216.864L222.779 135.903H228.694ZM238.249 135.903H244.164V152.343H238.249V135.903ZM253.949 135.903H259.864V149.733H270.904V152.343H253.949V135.903ZM280.939 135.903L286.854 152.343H280.939L275.024 135.903H280.939ZM301.129 144.153C301.129 149.208 295.174 153.278 287.889 153.278C280.604 153.278 274.649 149.208 274.649 144.153C274.649 139.098 280.604 135.028 287.889 135.028C295.174 135.028 301.129 139.098 301.129 144.153ZM310.859 135.903L304.944 152.343H299.029L304.944 135.903H310.859ZM320.689 135.903H326.604V152.343H320.689V135.903ZM336.129 135.903L342.044 152.343H336.129L330.214 135.903H336.129ZM352.244 144.153C352.244 149.208 346.289 153.278 339.004 153.278C331.719 153.278 325.764 149.208 325.764 144.153C325.764 139.098 331.719 135.028 339.004 135.028C346.289 135.028 352.244 139.098 352.244 144.153ZM359.814 135.903L363.344 141.478L366.874 135.903H373.374L366.874 144.383L373.374 152.343H366.874L363.344 146.748L359.814 152.343H353.314L359.814 144.383L353.314 135.903H359.814ZM383.159 135.903H389.074V152.343H383.159V135.903ZM398.859 135.903L404.774 152.343H398.859L392.944 135.903H398.859ZM409.074 135.903H414.989V152.343H409.074V135.903Z" fill="#2D2A26"/>
-                </svg>
+                <Image src={ultratechLogoBase64} alt="UltraTech Logo" width={200} height={69} />
              </div>
              <div className="flex flex-col items-end text-right">
                 <span className="font-semibold text-lg text-primary">UltraCertify</span>
@@ -806,3 +784,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
