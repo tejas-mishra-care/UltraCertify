@@ -63,6 +63,7 @@ import { criteria, certificationLevels } from "@/lib/certification-data";
 import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
 import { useToast } from "@/hooks/use-toast";
+import { ultratechLogoBase64 } from "@/lib/ultratech-logo";
 
 const projectSchema = z.object({
   registrationNumber: z.string().min(1, "Registration number is required"),
@@ -258,6 +259,7 @@ const UltraCertifyPage: FC = () => {
         };
         
         // --- PDF Header ---
+        doc.addImage(ultratechLogoBase64, 'PNG', margin, margin - 5, 40, 15);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
         doc.text('UltraCertify Report', pageWidth / 2, margin + 5, { align: 'center' });
@@ -453,13 +455,45 @@ const UltraCertifyPage: FC = () => {
       <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-primary font-headline">UltraCertify</h1>
-              <p className="text-muted-foreground">IGBC's NEST PLUS Ver 1.0 (Individual Green Home)</p>
+             <div className="flex items-center gap-4">
+                <svg
+                    width="150"
+                    height="40"
+                    viewBox="0 0 1238 316"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-primary fill-current"
+                    >
+                    <path
+                        d="M110.273 2.01601e-05L0 315.655H63.6338L110.273 148.435L156.913 315.655H220.547L110.273 2.01601e-05Z"
+                    />
+                    <path
+                        d="M331.059 0H221.751V315.655H331.059V255.485H281.921V185.733H327.452V128.02H281.921V61.1732H331.059V0Z"
+                    />
+                    <path
+                        d="M485.807 0H376.499V315.655H485.807V255.485H436.669V185.733H482.2V128.02H436.669V61.1732H485.807V0Z"
+                    />
+                    <path
+                        d="M603.82 254.493L656.784 0H543.109L502.879 174.453H501.705L461.475 0H347.8L400.764 254.493C387.89 259.919 380.316 268.421 380.316 278.46C380.316 295.368 402.044 308.822 429.611 308.822C448.468 308.822 463.036 301.776 469.749 293.056V312.579C461.862 314.116 453.39 315.068 444.331 315.068C419.84 315.068 398.698 307.437 386.137 293.642C373.576 307.437 352.434 315.068 327.943 315.068C299.89 315.068 276.012 305.616 276.012 284.931C276.012 268.023 293.456 256.402 316.521 249.062L347.8 152.617V0H428.438L477.576 150.841H478.75L527.888 0H608.197L550.866 160.27L617.928 249.062C641.579 256.402 659.023 268.023 659.023 284.931C659.023 305.616 635.145 315.068 607.092 315.068C582.601 315.068 561.459 307.437 548.898 293.642C536.337 307.437 515.195 315.068 490.704 315.068C481.645 315.068 473.173 314.116 465.286 312.579V293.056C471.999 301.776 486.567 308.822 505.424 308.822C532.991 308.822 554.719 295.368 554.719 278.46C554.719 268.421 547.145 259.919 540.117 254.493L603.82 254.493Z"
+                    />
+                    <path
+                        d="M840.403 0H755.908L671.413 315.655H736.22L751.531 254.283H830.408L845.719 315.655H910.526L840.403 0ZM790.97 201.289H773.526L790.97 124.787L808.413 201.289H790.97Z"
+                    />
+                    <path
+                        d="M912.186 0V315.655H972.355V0H912.186Z"
+                    />
+                    <path
+                        d="M1093.22 0H983.914V315.655H1093.22V255.485H1044.08V185.733H1089.61V128.02H1044.08V61.1732H1093.22V0Z"
+                    />
+                    <path
+                        d="M1238 0H1128.69V315.655H1238V255.485H1188.86V0H1238V0Z"
+                    />
+                    </svg>
+                <h1 className="text-3xl font-bold text-foreground font-headline">UltraCertify</h1>
             </div>
-             <div className="flex items-center gap-2">
-                <Award className="w-6 h-6 text-primary" />
-                <span className="font-semibold text-lg">Certification Tool</span>
+             <div className="flex flex-col items-end">
+                <span className="font-semibold text-lg text-primary">IGBC's NEST PLUS Ver 1.0</span>
+                <p className="text-sm text-muted-foreground">Individual Green Home Certification Tool</p>
             </div>
           </header>
 
@@ -483,7 +517,7 @@ const UltraCertifyPage: FC = () => {
                         return (
                         <React.Fragment key={criterion.id}>
                           <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4 p-4 rounded-lg transition-colors hover:bg-secondary/50">
-                            <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved) ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
+                            <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${(currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved)) ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
                             <div className="flex-1 md:col-span-2">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold">{criterion.name}</h3>
@@ -775,5 +809,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    
