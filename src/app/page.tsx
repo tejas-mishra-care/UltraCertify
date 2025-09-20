@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from "react";
-import React, from "react";
+import React, {useCallback} from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +23,9 @@ import {
   Building2,
   Layers,
   Trees,
+  Mail,
+  Phone,
+  Bike,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -70,13 +73,17 @@ import ultratechLogo from "@/lib/ultratech-logo.png";
 const projectSchema = z.object({
   registrationNumber: z.string().min(1, "Registration number is required"),
   ownerName: z.string().min(1, "Owner name is required"),
+  mobileNumber: z.string().min(1, "Mobile number is required"),
+  emailAddress: z.string().email("Invalid email address"),
   projectLocation: z.string().min(1, "Project location is required"),
   fullAddress: z.string().min(1, "Full address is required"),
   permissionAuthority: z.string().min(1, "Permission authority is required"),
+  projectType: z.string().min(1, "Project type is required"),
   numberOfFloors: z.coerce.number().int().min(1, "Number of floors must be at least 1"),
   totalSiteArea: z.coerce.number().min(1, "Total site area must be greater than 0"),
   totalBuiltUpArea: z.coerce.number().min(1, "Total built-up area must be greater than 0"),
   landscapeArea: z.coerce.number().min(0, "Landscape area cannot be negative"),
+  twoWheelerParking: z.coerce.number().int().min(0, "Number cannot be negative"),
   buildingType: z.enum(["New", "Existing"]),
 });
 
@@ -95,13 +102,17 @@ const UltraCertifyPage: FC = () => {
     defaultValues: {
       registrationNumber: "",
       ownerName: "",
+      mobileNumber: "",
+      emailAddress: "",
       projectLocation: "",
       fullAddress: "",
       permissionAuthority: "",
+      projectType: "Residential Building",
       numberOfFloors: 1,
       totalSiteArea: 1,
       totalBuiltUpArea: 1,
       landscapeArea: 0,
+      twoWheelerParking: 0,
       buildingType: "New",
     },
     mode: 'onChange'
@@ -156,7 +167,7 @@ const UltraCertifyPage: FC = () => {
   }, [buildingType]);
 
 
-  const getCriterionScore = React.useCallback((criterion: Criterion) => {
+  const getCriterionScore = useCallback((criterion: Criterion) => {
     if (criterion.type !== 'Credit') return 0;
 
     const selection = selectedOptions[criterion.id];
@@ -177,7 +188,7 @@ const UltraCertifyPage: FC = () => {
     }
     
     if (!criterion.options && selection === 'true') {
-        return maxPoints || 0;
+        return maxPoints;
     }
 
     return 0;
@@ -188,12 +199,12 @@ const UltraCertifyPage: FC = () => {
   }, [buildingType]);
 
   const { currentScore, maxScore, progress, certificationLevel } = React.useMemo(() => {
-    const score = visibleCriteria.reduce((acc, criterion) => {
+    let score = 0;
+    visibleCriteria.forEach(criterion => {
         if (criterion.type === 'Credit') {
-            return acc + getCriterionScore(criterion);
+            score += getCriterionScore(criterion);
         }
-        return acc;
-    }, 0);
+    });
 
     const max = visibleCriteria.reduce((acc, c) => {
         if (c.type === 'Credit') {
@@ -266,7 +277,7 @@ const UltraCertifyPage: FC = () => {
         await new Promise(resolve => { logoImg.onload = resolve });
         const ultratechLogoBase64 = getBase64Image(logoImg);
 
-        const doc = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
+        const doc = new jsPDF('l', 'mm', 'a4'); 
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 15;
@@ -302,11 +313,15 @@ const UltraCertifyPage: FC = () => {
         const details = [
             { label: 'Registration Number', value: projectData.registrationNumber },
             { label: 'Owner Name', value: projectData.ownerName },
+            { label: 'Mobile Number', value: projectData.mobileNumber },
+            { label: 'Email Address', value: projectData.emailAddress },
             { label: 'Building Type', value: projectData.buildingType },
+            { label: 'Project Type', value: projectData.projectType },
             { label: 'Permission Authority', value: projectData.permissionAuthority },
             { label: 'Project Location', value: projectData.projectLocation },
             { label: 'Full Address', value: projectData.fullAddress },
             { label: 'Number of Floors', value: projectData.numberOfFloors.toString() },
+            { label: 'Two Wheeler Parking', value: projectData.twoWheelerParking.toString() },
             { label: 'Total Site Area', value: `${projectData.totalSiteArea} sq. m` },
             { label: 'Total Built-up Area', value: `${projectData.totalBuiltUpArea} sq. m` },
             { label: 'Landscape Area', value: `${projectData.landscapeArea} sq. m` },
@@ -663,6 +678,30 @@ const UltraCertifyPage: FC = () => {
                           <FormMessage />
                         </FormItem>
                       )} />
+                      <FormField control={form.control} name="mobileNumber" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mobile Number</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="e.g., 9876543210" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="emailAddress" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Address</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="jane.doe@example.com" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                        <FormField control={form.control} name="projectLocation" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Project Location</FormLabel>
@@ -694,6 +733,18 @@ const UltraCertifyPage: FC = () => {
                             <div className="relative">
                                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                <Input placeholder="e.g., Local Municipal Authority" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                       <FormField control={form.control} name="projectType" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Project Type</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input placeholder="e.g., Residential Building" {...field} className="pl-9" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -747,6 +798,18 @@ const UltraCertifyPage: FC = () => {
                           <FormMessage />
                         </FormItem>
                       )} />
+                       <FormField control={form.control} name="twoWheelerParking" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Two Wheeler Parking (Nos)</FormLabel>
+                           <FormControl>
+                            <div className="relative">
+                               <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                               <Input type="number" placeholder="1" {...field} className="pl-9" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </form>
                   </Form>
                 </CardContent>
@@ -765,7 +828,7 @@ const UltraCertifyPage: FC = () => {
                       )}
                       Suggest Applicable Credits
                     </Button>
-                    <Button onClick={handleGeneratePDF} variant="outline" disabled={isGeneratingPDF}>
+                    <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
                       {isGeneratingPDF ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
@@ -805,5 +868,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    

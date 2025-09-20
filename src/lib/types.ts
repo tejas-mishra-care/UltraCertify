@@ -27,6 +27,8 @@ export type CertificationLevel = {
 export type ProjectData = {
   registrationNumber: string;
   ownerName: string;
+  mobileNumber: string;
+  emailAddress: string;
   projectLocation: string;
   fullAddress: string;
   permissionAuthority: string;
@@ -34,6 +36,8 @@ export type ProjectData = {
   totalSiteArea: number;
   totalBuiltUpArea: number;
   landscapeArea: number;
+  projectType: string;
+  twoWheelerParking: number;
   buildingType: BuildingType;
 };
 
