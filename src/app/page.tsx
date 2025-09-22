@@ -26,6 +26,8 @@ import {
   Mail,
   Phone,
   Bike,
+  Save,
+  ArrowLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -91,6 +93,7 @@ const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = React.useState<Record<string, UploadedFile[]>>({});
   const [isAISuggesting, setIsAISuggesting] = React.useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
+  const [isSavingDraft, setIsSavingDraft] = React.useState(false);
   const [aiSuggestions, setAISuggestions] = React.useState<string[]>([]);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = React.useState(false);
   const [selectedOptions, setSelectedOptions] = React.useState<Record<string, string | string[]>>({});
@@ -480,355 +483,365 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
+  const handleSaveDraft = () => {
+    setIsSavingDraft(true);
+    // Simulate API call
+    setTimeout(() => {
+        toast({
+            title: "Draft Saved",
+            description: "Your project progress has been saved.",
+        });
+        setIsSavingDraft(false);
+    }, 1500);
+  }
+
 
   return (
     <>
-      <main id="main-content" className="min-h-screen bg-secondary/50 p-2 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-             <div className="flex items-center gap-4">
-                <Image src={ultratechLogo} alt="UltraTech Logo" width={200} height={69} />
-             </div>
-             <div className="flex flex-col items-end text-right">
-                <span className="font-semibold text-lg text-primary">UltraCertify</span>
-                <p className="text-sm text-muted-foreground">IGBC's NEST PLUS Ver 1.0 - Green Home Certification</p>
-            </div>
-          </header>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Certification Criteria</CardTitle>
+              <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[80vh] pr-4">
+                <div className="space-y-4">
+                  {visibleCriteria.map((criterion, index) => {
+                    const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
+                    const options = getCriterionOptions(criterion);
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Certification Criteria</CardTitle>
-                  <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[80vh] pr-4">
-                    <div className="space-y-4">
-                      {visibleCriteria.map((criterion, index) => {
-                        const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
-                        const options = getCriterionOptions(criterion);
-
-                        const currentPoints = getCriterionScore(criterion);
-                        const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-                        
-                        return (
-                        <React.Fragment key={criterion.id}>
-                          <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4 p-4 rounded-lg transition-colors hover:bg-secondary/50">
-                            <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${(currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved)) ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
-                            <div className="flex-1 md:col-span-2">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold">{criterion.name}</h3>
-                                <Badge variant={criterion.type === 'Mandatory' ? 'destructive' : 'secondary'}>{criterion.type}</Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
-                              <p className="text-sm text-muted-foreground mt-1"><strong>Documents:</strong> {criterion.documents}</p>
-                               {criterion.type === 'Credit' && (
-                                <>
-                                  <p className="text-sm font-medium text-primary mt-2">
-                                    Points: {currentPoints} / {maxPoints}
-                                  </p>
-
-                                  {!options && (
-                                     <div className="flex items-center space-x-2 mt-2">
-                                        <Checkbox
-                                            id={`${criterion.id}-achieved`}
-                                            checked={selectedOptions[criterion.id] === 'true'}
-                                            onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
-                                        />
-                                        <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
-                                    </div>
-                                  )}
-                                  
-                                  {options && criterion.selectionType !== 'multiple' && (
-                                     <div className="mt-2">
-                                        <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
-                                            <SelectTrigger className="w-full md:w-[280px]">
-                                                <SelectValue placeholder="Select achieved level..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
-                                                {options.map(opt => (
-                                                    <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                     </div>
-                                  )}
-
-                                  {options && criterion.selectionType === 'multiple' && (
-                                    <div className="mt-2 space-y-2">
-                                      {options.map(opt => (
-                                        <div key={opt.label} className="flex items-center space-x-2">
-                                          <Checkbox
-                                            id={`${criterion.id}-${opt.label}`}
-                                            checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
-                                            onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
-                                          />
-                                          <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </>
-                               )}
-                            </div>
-                            <ImageUploader
-                              criterionId={criterion.id}
-                              onFileChange={handleFileChange}
-                            />
+                    const currentPoints = getCriterionScore(criterion);
+                    const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+                    
+                    return (
+                    <React.Fragment key={criterion.id}>
+                      <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4 p-4 rounded-lg transition-colors hover:bg-secondary/50">
+                        <CheckCircle2 className={`mt-1 h-5 w-5 shrink-0 ${(currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved)) ? 'text-green-500' : 'text-muted-foreground/50'} hidden md:block`} />
+                        <div className="flex-1 md:col-span-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{criterion.name}</h3>
+                            <Badge variant={criterion.type === 'Mandatory' ? 'destructive' : 'secondary'}>{criterion.type}</Badge>
                           </div>
-                          {index < visibleCriteria.length - 1 && <Separator />}
-                        </React.Fragment>
-                      )})}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
+                          <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
+                          <p className="text-sm text-muted-foreground mt-1"><strong>Documents:</strong> {criterion.documents}</p>
+                           {criterion.type === 'Credit' && (
+                            <>
+                              <p className="text-sm font-medium text-primary mt-2">
+                                Points: {currentPoints} / {maxPoints}
+                              </p>
 
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Score</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-baseline mb-1">
-                      <span className="text-sm font-medium text-primary">Progress</span>
-                       <span className={`text-lg font-bold ${certificationLevel.color}`}>{certificationLevel.level}</span>
-                    </div>
-                    <Progress value={progress} className="w-full h-3" />
-                    <p className="text-right mt-1 text-lg font-bold">
-                      {currentScore} / {maxScore} Points
-                    </p>
-                  </div>
-                   <Separator />
-                   <div className="space-y-2">
-                     {certificationLevels.map(level => (
-                       <div key={level.level} className="flex justify-between items-center text-sm">
-                         <span className={`${level.color}`}>{level.level}</span>
-                         <span className="font-medium text-muted-foreground">{level.minScore[buildingType]}+ Points</span>
-                       </div>
-                     ))}
-                   </div>
-                </CardContent>
-              </Card>
+                              {!options && (
+                                 <div className="flex items-center space-x-2 mt-2">
+                                    <Checkbox
+                                        id={`${criterion.id}-achieved`}
+                                        checked={selectedOptions[criterion.id] === 'true'}
+                                        onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
+                                    />
+                                    <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
+                                </div>
+                              )}
+                              
+                              {options && criterion.selectionType !== 'multiple' && (
+                                 <div className="mt-2">
+                                    <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
+                                        <SelectTrigger className="w-full md:w-[280px]">
+                                            <SelectValue placeholder="Select achieved level..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
+                                            {options.map(opt => (
+                                                <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                 </div>
+                              )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Project Details</CardTitle>
-                  <CardDescription>Fill in the information for your project.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...form}>
-                    <form className="space-y-4">
-                      <FormField control={form.control} name="buildingType" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Building Type</FormLabel>
-                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select building type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="New">New</SelectItem>
-                                <SelectItem value="Existing">Existing</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField control={form.control} name="registrationNumber" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Project Registration Number</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., NEST-12345" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="ownerName" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Owner Name</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="Jane Doe" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="mobileNumber" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mobile Number</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., 9876543210" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="emailAddress" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Address</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="jane.doe@example.com" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="projectLocation" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Project Location</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                               <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., Eco City" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="fullAddress" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Address with Pincode</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="123 Green Way, Eco City, 123456" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="permissionAuthority" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Permission Authority</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., Local Municipal Authority" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="projectType" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Project Type</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input placeholder="e.g., Residential Building" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="numberOfFloors" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Number of Floors</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                               <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="2" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="totalSiteArea" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Site Area (sq. m)</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="200" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="totalBuiltUpArea" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Built-up Area (sq. m)</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="150" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="landscapeArea" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Landscape Area (sq. m)</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Trees className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="50" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                       <FormField control={form.control} name="twoWheelerParking" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Two Wheeler Parking (Nos)</FormLabel>
-                           <FormControl>
-                            <div className="relative">
-                               <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                               <Input type="number" placeholder="1" {...field} className="pl-9" />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                 <CardHeader>
-                    <CardTitle>Actions</CardTitle>
-                 </CardHeader>
-                 <CardContent className="grid grid-cols-1 gap-4">
-                    <Button onClick={handleSuggestCredits} disabled={isAISuggesting}>
-                      {isAISuggesting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Lightbulb className="mr-2 h-4 w-4" />
-                      )}
-                      Suggest Applicable Credits
-                    </Button>
-                    <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
-                      {isGeneratingPDF ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                          <FileDown className="mr-2 h-4 w-4" />
-                      )}
-                      Generate PDF Report
-                    </Button>
-                 </CardContent>
-              </Card>
-            </div>
-          </div>
+                              {options && criterion.selectionType === 'multiple' && (
+                                <div className="mt-2 space-y-2">
+                                  {options.map(opt => (
+                                    <div key={opt.label} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`${criterion.id}-${opt.label}`}
+                                        checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
+                                        onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
+                                      />
+                                      <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                           )}
+                        </div>
+                        <ImageUploader
+                          criterionId={criterion.id}
+                          onFileChange={handleFileChange}
+                        />
+                      </div>
+                      {index < visibleCriteria.length - 1 && <Separator />}
+                    </React.Fragment>
+                  )})}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
-      </main>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Score</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm font-medium text-primary">Progress</span>
+                   <span className={`text-lg font-bold ${certificationLevel.color}`}>{certificationLevel.level}</span>
+                </div>
+                <Progress value={progress} className="w-full h-3" />
+                <p className="text-right mt-1 text-lg font-bold">
+                  {currentScore} / {maxScore} Points
+                </p>
+              </div>
+               <Separator />
+               <div className="space-y-2">
+                 {certificationLevels.map(level => (
+                   <div key={level.level} className="flex justify-between items-center text-sm">
+                     <span className={`${level.color}`}>{level.level}</span>
+                     <span className="font-medium text-muted-foreground">{level.minScore[buildingType]}+ Points</span>
+                   </div>
+                 ))}
+               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Details</CardTitle>
+              <CardDescription>Fill in the information for your project.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form className="space-y-4">
+                  <FormField control={form.control} name="buildingType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Building Type</FormLabel>
+                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select building type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="New">New</SelectItem>
+                            <SelectItem value="Existing">Existing</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField control={form.control} name="registrationNumber" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Registration Number</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="e.g., NEST-12345" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="ownerName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner Name</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="Jane Doe" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="mobileNumber" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mobile Number</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="e.g., 9876543210" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="emailAddress" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="jane.doe@example.com" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="projectLocation" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Location</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Map className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="e.g., Eco City" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="fullAddress" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Address with Pincode</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="123 Green Way, Eco City, 123456" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="permissionAuthority" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Permission Authority</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="e.g., Local Municipal Authority" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="projectType" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Type</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input placeholder="e.g., Residential Building" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="numberOfFloors" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Number of Floors</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                           <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input type="number" placeholder="2" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="totalSiteArea" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Site Area (sq. m)</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input type="number" placeholder="200" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="totalBuiltUpArea" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Total Built-up Area (sq. m)</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input type="number" placeholder="150" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="landscapeArea" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Landscape Area (sq. m)</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Trees className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input type="number" placeholder="50" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField control={form.control} name="twoWheelerParking" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Two Wheeler Parking (Nos)</FormLabel>
+                       <FormControl>
+                        <div className="relative">
+                           <Bike className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                           <Input type="number" placeholder="1" {...field} className="pl-9" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+          
+          <Card>
+             <CardHeader>
+                <CardTitle>Actions</CardTitle>
+             </CardHeader>
+             <CardContent className="grid grid-cols-1 gap-4">
+                <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
+                  {isSavingDraft ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Draft
+                </Button>
+                <Button onClick={handleSuggestCredits} disabled={isAISuggesting}>
+                  {isAISuggesting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                  )}
+                  Suggest Applicable Credits
+                </Button>
+                <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
+                  {isGeneratingPDF ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                      <FileDown className="mr-2 h-4 w-4" />
+                  )}
+                  Generate PDF Report
+                </Button>
+                <Button variant="link" onClick={() => window.location.href='/drafts'}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Drafts
+                </Button>
+             </CardContent>
+          </Card>
+        </div>
+      </div>
 
       <Dialog open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
