@@ -13,11 +13,8 @@ import {
   User,
   MapPin,
   CheckCircle2,
-  Lightbulb,
   FileDown,
   Loader2,
-  Sparkles,
-  Award,
   Hash,
   Map,
   Building2,
@@ -51,13 +48,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -65,7 +55,6 @@ import { Label } from "@/components/ui/label";
 
 import type { UploadedFile, ProjectData, Criterion } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
-import { getAISuggestions } from "@/app/actions";
 import { ImageUploader } from "@/components/image-uploader";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
@@ -91,11 +80,8 @@ const projectSchema = z.object({
 
 const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = React.useState<Record<string, UploadedFile[]>>({});
-  const [isAISuggesting, setIsAISuggesting] = React.useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
   const [isSavingDraft, setIsSavingDraft] = React.useState(false);
-  const [aiSuggestions, setAISuggestions] = React.useState<string[]>([]);
-  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = React.useState(false);
   const [selectedOptions, setSelectedOptions] = React.useState<Record<string, string | string[]>>({});
 
   const { toast } = useToast();
@@ -226,33 +212,6 @@ const UltraCertifyPage: FC = () => {
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
   }, [visibleCriteria, getCriterionScore, buildingType]);
 
-
-  const handleSuggestCredits = async () => {
-    const images = Object.values(uploadedFiles).flat().map(file => file.dataURL);
-    if (images.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No Images Uploaded",
-        description: "Please upload at least one image to get AI suggestions.",
-      });
-      return;
-    }
-
-    setIsAISuggesting(true);
-    try {
-      const result = await getAISuggestions(images);
-      setAISuggestions(result.suggestedCredits);
-      setIsSuggestionModalOpen(true);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "AI Suggestion Failed",
-        description: "Could not get suggestions. Please try again later.",
-      });
-    } finally {
-      setIsAISuggesting(false);
-    }
-  };
 
   const getBase64Image = (img: HTMLImageElement): string => {
       const canvas = document.createElement("canvas");
@@ -818,14 +777,6 @@ const UltraCertifyPage: FC = () => {
                   )}
                   Save Draft
                 </Button>
-                <Button onClick={handleSuggestCredits} disabled={isAISuggesting}>
-                  {isAISuggesting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Lightbulb className="mr-2 h-4 w-4" />
-                  )}
-                  Suggest Applicable Credits
-                </Button>
                 <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
                   {isGeneratingPDF ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -842,29 +793,10 @@ const UltraCertifyPage: FC = () => {
           </Card>
         </div>
       </div>
-
-      <Dialog open={isSuggestionModalOpen} onOpenChange={setIsSuggestionModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-accent" />
-              AI-Suggested Credits
-            </DialogTitle>
-            <DialogDescription>
-              Based on your uploaded images, you might be able to earn these credits.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-60 overflow-y-auto pr-2">
-            <ul className="list-disc pl-5 space-y-2 text-sm">
-                {aiSuggestions.map((suggestion, index) => (
-                  <li key={index}>{suggestion}</li>
-                ))}
-            </ul>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
 
 export default UltraCertifyPage;
+
+    
