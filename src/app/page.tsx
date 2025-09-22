@@ -380,56 +380,76 @@ const UltraCertifyPage: FC = () => {
           }
         }
         bottomOfText = addDetail('Status:', statusText, bottomOfText);
-
+        
+        const textBlockHeight = bottomOfText - currentY;
         let imageY = bottomOfText + 5;
 
         if (files.length > 0) {
-          const imgWidth = 100;
-          const imgHeight = 75;
-          const descHeight = 20;
-          const totalBlockHeight = imgHeight + descHeight;
-          const gap = 10;
-          const imagesPerRow = 1; // Force one image per row
-          let currentX = margin;
-
-          for (let i = 0; i < files.length; i++) {
+           for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            if (imageY + totalBlockHeight > pageHeight - 15) {
-              addFooter();
-              doc.addPage();
-              pageCount++;
-              imageY = margin;
-              currentX = margin;
-              doc.setFontSize(12);
-              doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
-              imageY += 10;
+            
+            // Add a new page for each image to ensure it's large and clear
+            if (i > 0) {
+                addFooter();
+                doc.addPage();
+                pageCount++;
+                imageY = margin;
+                doc.setFontSize(12);
+                doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
+                imageY += 10;
+            } else {
+                 // Check if there is enough space on the current page for the first image
+                 if (imageY > pageHeight - 80) { // arbitrary 80mm space for a decent image
+                    addFooter();
+                    doc.addPage();
+                    pageCount++;
+                    imageY = margin;
+                    doc.setFontSize(12);
+                    doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
+                    imageY += 10;
+                 }
             }
 
             try {
-              const urlMatch = file.dataURL.match(/^data:image\/(jpeg|png);base64,/);
-              if (!urlMatch) {
-                throw new Error("Invalid image dataURL format.");
+              const img = new window.Image();
+              img.src = file.dataURL;
+              await new Promise(resolve => { img.onload = resolve });
+
+              const imgWidth = img.width;
+              const imgHeight = img.height;
+              const aspectRatio = imgWidth / imgHeight;
+
+              const maxImgWidth = pageWidth - (margin * 2);
+              const maxImgHeight = pageHeight - imageY - 25; // 25 for desc and footer
+
+              let finalWidth = maxImgWidth;
+              let finalHeight = finalWidth / aspectRatio;
+
+              if (finalHeight > maxImgHeight) {
+                finalHeight = maxImgHeight;
+                finalWidth = finalHeight * aspectRatio;
               }
-              const imageType = urlMatch[1].toUpperCase();
-              doc.addImage(file.dataURL, imageType, currentX, imageY, imgWidth, imgHeight);
               
+              const xPos = (pageWidth - finalWidth) / 2;
+
+              const urlMatch = file.dataURL.match(/^data:image\/(jpeg|png);base64,/);
+              if (!urlMatch) { throw new Error("Invalid image dataURL format."); }
+              const imageType = urlMatch[1].toUpperCase();
+
+              doc.addImage(file.dataURL, imageType, xPos, imageY, finalWidth, finalHeight);
+              
+              const descY = imageY + finalHeight + 5;
               doc.setFontSize(8);
-              doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
-              doc.text(descLines, currentX, imageY + imgHeight + 4);
+              doc.setFont('helvetica', 'italic');
+              const descLines = doc.splitTextToSize(file.description || 'No description provided.', finalWidth);
+              doc.text(descLines, xPos, descY);
 
             } catch (e) {
               console.error("Error adding image to PDF:", e);
               doc.setFontSize(8);
               doc.setTextColor(150);
-              doc.text("[Could not render image]", currentX + (imgWidth/2), imageY + imgHeight / 2, { align: 'center' });
+              doc.text("[Could not render image]", pageWidth/2, imageY + 40, { align: 'center' });
               doc.setTextColor(0);
-            }
-
-            currentX += imgWidth + gap;
-            if ((i + 1) % imagesPerRow === 0) {
-              imageY += totalBlockHeight + gap;
-              currentX = margin;
             }
           }
         }
