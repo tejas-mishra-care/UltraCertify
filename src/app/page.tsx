@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from "react";
-import React, {useCallback} from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,12 +56,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-
-import type { UploadedFile, ProjectData, Criterion } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import type { UploadedFile, ProjectData, Criterion, CriterionOption, BuildingType } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
-import { useToast } from "@/hooks/use-toast";
 
 
 const projectSchema = z.object({
@@ -82,10 +80,10 @@ const projectSchema = z.object({
 });
 
 const UltraCertifyPage: FC = () => {
-  const [uploadedFiles, setUploadedFiles] = React.useState<Record<string, UploadedFile[]>>({});
-  const [isGeneratingPDF, setIsGeneratingPDF] = React.useState(false);
-  const [isSavingDraft, setIsSavingDraft] = React.useState(false);
-  const [selectedOptions, setSelectedOptions] = React.useState<Record<string, string | string[]>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
 
   const { toast } = useToast();
 
@@ -110,10 +108,9 @@ const UltraCertifyPage: FC = () => {
     mode: 'onChange'
   });
 
-  const projectData = form.watch();
   const buildingType = form.watch("buildingType");
 
-  const handleFileChange = React.useCallback((criterionId: string, files: UploadedFile[] | null) => {
+  const handleFileChange = useCallback((criterionId: string, files: UploadedFile[] | null) => {
     setUploadedFiles((prev) => {
       const newFiles = { ...prev };
       if (files && files.length > 0) {
@@ -125,14 +122,14 @@ const UltraCertifyPage: FC = () => {
     });
   }, []);
 
-  const handleOptionChange = React.useCallback((criterionId: string, value: string) => {
+  const handleOptionChange = useCallback((criterionId: string, value: string) => {
     setSelectedOptions(prev => ({
       ...prev,
       [criterionId]: value
     }));
   }, []);
 
-  const handleCheckboxChange = React.useCallback((criterionId: string, optionLabel: string, checked: boolean) => {
+  const handleCheckboxChange = useCallback((criterionId: string, optionLabel: string, checked: boolean) => {
     setSelectedOptions(prev => {
       const currentSelection = prev[criterionId] || [];
       const newSelection = Array.isArray(currentSelection) ? [...currentSelection] : [];
@@ -153,311 +150,301 @@ const UltraCertifyPage: FC = () => {
     });
   }, []);
 
-  const getCriterionOptions = React.useCallback((criterion: Criterion) => {
-      if (!criterion.options) return undefined;
-      return Array.isArray(criterion.options) ? criterion.options : criterion.options[buildingType];
+  const getCriterionOptions = useCallback((criterion: Criterion): CriterionOption[] | undefined => {
+    if (!criterion.options) return undefined;
+    return Array.isArray(criterion.options) ? criterion.options : criterion.options[buildingType];
   }, [buildingType]);
 
-
-  const getCriterionScore = useCallback((criterion: Criterion) => {
+  const getCriterionScore = useCallback((criterion: Criterion): number => {
     if (criterion.type !== 'Credit') return 0;
 
     const selection = selectedOptions[criterion.id];
-    const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
+    const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
     const options = getCriterionOptions(criterion);
 
     if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
-        const calculatedPoints = selection.reduce((acc, sel) => {
-            const option = options?.find(opt => opt.label === sel);
-            return acc + (option?.points || 0);
-        }, 0);
-        return Math.min(calculatedPoints, maxPoints);
+      const calculatedPoints = selection.reduce((acc, sel) => {
+        const option = options?.find(opt => opt.label === sel);
+        return acc + (option?.points || 0);
+      }, 0);
+      return Math.min(calculatedPoints, maxPoints);
     }
-    
+
     if (typeof selection === 'string' && options) {
-        const selectedOption = options.find(opt => opt.label === selection);
-        return selectedOption?.points || 0;
+      const selectedOption = options.find(opt => opt.label === selection);
+      return selectedOption?.points || 0;
     }
-    
+
     if (!criterion.options && selection === 'true') {
-        return maxPoints;
+      return maxPoints;
     }
 
     return 0;
   }, [selectedOptions, getCriterionOptions, buildingType]);
 
-  const visibleCriteria = React.useMemo(() => {
-    return criteria.filter(c => c.applicability[buildingType]);
+  const visibleCriteria = useMemo(() => {
+    return criteria.filter(c => c.applicability[buildingType as BuildingType]);
   }, [buildingType]);
 
-  const { currentScore, maxScore, progress, certificationLevel } = React.useMemo(() => {
+  const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
     let score = 0;
     visibleCriteria.forEach(criterion => {
-        if (criterion.type === 'Credit') {
-            score += getCriterionScore(criterion);
-        }
+      if (criterion.type === 'Credit') {
+        score += getCriterionScore(criterion);
+      }
     });
 
     const max = visibleCriteria.reduce((acc, c) => {
-        if (c.type === 'Credit') {
-            const points = typeof c.points === 'number' ? c.points : c.points[buildingType];
-            return acc + (points || 0);
-        }
-        return acc;
+      if (c.type === 'Credit') {
+        const points = typeof c.points === 'number' ? c.points : c.points[buildingType as BuildingType];
+        return acc + (points || 0);
+      }
+      return acc;
     }, 0);
-    
+
     const prog = max > 0 ? (score / max) * 100 : 0;
 
     const level = [...certificationLevels]
       .reverse()
-      .find((l) => score >= l.minScore[buildingType]) || { level: 'Uncertified', color: 'text-gray-500', minScore: { New: 0, Existing: 0 } };
+      .find((l) => score >= l.minScore[buildingType as BuildingType]) || { level: 'Uncertified', color: 'text-gray-500' };
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
   }, [visibleCriteria, getCriterionScore, buildingType]);
 
-
   const getBase64Image = (img: HTMLImageElement): string => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          const dataURL = canvas.toDataURL("image/png");
-          return dataURL;
-      }
-      return '';
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(img, 0, 0);
+      const dataURL = canvas.toDataURL("image/png");
+      return dataURL;
+    }
+    return '';
   };
 
- const handleGeneratePDF = async () => {
+  const handleGeneratePDF = async () => {
+    const projectDataForPdf = form.getValues();
     setIsGeneratingPDF(true);
     toast({
-        title: "Generating Report...",
-        description: "Please wait while your PDF is being created.",
+      title: "Generating Report...",
+      description: "Please wait while your PDF is being created.",
     });
 
     try {
-        const logoImg = new window.Image();
-        logoImg.src = '/ultratech-logo.png';
-        await new Promise((resolve, reject) => { 
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
-        });
-        const ultratechLogoBase64 = getBase64Image(logoImg);
+      const logoImg = new window.Image();
+      logoImg.src = '/ultratech-logo.png';
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = reject;
+      });
+      const ultratechLogoBase64 = getBase64Image(logoImg);
 
-        const doc = new jsPDF('l', 'mm', 'a4'); 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-        let pageCount = 1;
+      const doc = new jsPDF('l', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let pageCount = 1;
 
-        const addFooter = () => {
-            doc.setFontSize(8);
-            const footerText = `Report for ${projectData.ownerName} | Generated by UltraCertify on ${new Date().toLocaleDateString()}`;
-            doc.text(footerText, margin, pageHeight - 10);
-            doc.text(`Page ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
-        };
-        
-        // --- PDF Header ---
-        if (ultratechLogoBase64) {
-            doc.addImage(ultratechLogoBase64, 'PNG', margin, 10, 40, 15);
+      const addFooter = () => {
+        doc.setFontSize(8);
+        const footerText = `Report for ${projectDataForPdf.ownerName} | Generated by UltraCertify on ${new Date().toLocaleDateString()}`;
+        doc.text(footerText, margin, pageHeight - 10);
+        doc.text(`Page ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+      };
+
+      if (ultratechLogoBase64) {
+        doc.addImage(ultratechLogoBase64, 'PNG', margin, 10, 40, 15);
+      }
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('UltraCertify Report', pageWidth / 2, 15, { align: 'center' });
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, 22, { align: 'center' });
+      doc.setLineWidth(0.5);
+      doc.line(margin, 28, pageWidth - margin, 28);
+
+      let yPos = 35;
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Project Details', margin, yPos);
+      yPos += 8;
+      doc.setFontSize(10);
+
+      const details = [
+        { label: 'Registration Number', value: projectDataForPdf.registrationNumber },
+        { label: 'Owner Name', value: projectDataForPdf.ownerName },
+        { label: 'Mobile Number', value: projectDataForPdf.mobileNumber },
+        { label: 'Email Address', value: projectDataForPdf.emailAddress },
+        { label: 'Building Type', value: projectDataForPdf.buildingType },
+        { label: 'Project Type', value: projectDataForPdf.projectType },
+        { label: 'Permission Authority', value: projectDataForPdf.permissionAuthority },
+        { label: 'Project Location', value: projectDataForPdf.projectLocation },
+        { label: 'Full Address', value: projectDataForPdf.fullAddress },
+        { label: 'Number of Floors', value: projectDataForPdf.numberOfFloors.toString() },
+        { label: 'Two Wheeler Parking', value: projectDataForPdf.twoWheelerParking.toString() },
+        { label: 'Total Site Area', value: `${projectDataForPdf.totalSiteArea} sq. m` },
+        { label: 'Total Built-up Area', value: `${projectDataForPdf.totalBuiltUpArea} sq. m` },
+        { label: 'Landscape Area', value: `${projectDataForPdf.landscapeArea} sq. m` },
+      ];
+
+      const col1X = margin;
+      const col2X = pageWidth / 2;
+      let detailY = yPos;
+
+      details.forEach((detail, index) => {
+        const currentX = index % 2 === 0 ? col1X : col2X;
+        if (index > 0 && index % 2 === 0) {
+          detailY += 7;
         }
-        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('UltraCertify Report', pageWidth / 2, 15, { align: 'center' });
-        doc.setFontSize(12);
+        doc.text(`${detail.label}:`, currentX, detailY);
         doc.setFont('helvetica', 'normal');
-        doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, 22, { align: 'center' });
-        doc.setLineWidth(0.5);
-        doc.line(margin, 28, pageWidth - margin, 28);
+        doc.text(detail.value || '-', currentX + 50, detailY);
+      });
 
-        // --- Project Details ---
-        let yPos = 35;
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Project Details', margin, yPos);
-        yPos += 8;
-        doc.setFontSize(10);
-        
-        const details = [
-            { label: 'Registration Number', value: projectData.registrationNumber },
-            { label: 'Owner Name', value: projectData.ownerName },
-            { label: 'Mobile Number', value: projectData.mobileNumber },
-            { label: 'Email Address', value: projectData.emailAddress },
-            { label: 'Building Type', value: projectData.buildingType },
-            { label: 'Project Type', value: projectData.projectType },
-            { label: 'Permission Authority', value: projectData.permissionAuthority },
-            { label: 'Project Location', value: projectData.projectLocation },
-            { label: 'Full Address', value: projectData.fullAddress },
-            { label: 'Number of Floors', value: projectData.numberOfFloors.toString() },
-            { label: 'Two Wheeler Parking', value: projectData.twoWheelerParking.toString() },
-            { label: 'Total Site Area', value: `${projectData.totalSiteArea} sq. m` },
-            { label: 'Total Built-up Area', value: `${projectData.totalBuiltUpArea} sq. m` },
-            { label: 'Landscape Area', value: `${projectData.landscapeArea} sq. m` },
-        ];
-        
-        const col1X = margin;
-        const col2X = pageWidth / 2;
-        let detailY = yPos;
+      yPos = detailY + 15;
 
-        details.forEach((detail, index) => {
-            const currentX = index % 2 === 0 ? col1X : col2X;
-            if (index > 0 && index % 2 === 0) {
-                detailY += 7;
-            }
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${detail.label}:`, currentX, detailY);
-            doc.setFont('helvetica', 'normal');
-            doc.text(detail.value || '-', currentX + 50, detailY);
-        });
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Certification Summary', margin, yPos);
+      yPos += 8;
+      doc.setFontSize(12);
+      doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
+      yPos += 8;
+      doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
 
-        yPos = detailY + 15;
+      addFooter();
 
-        // --- Certification Summary ---
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Certification Summary', margin, yPos);
-        yPos += 8;
+      for (const criterion of visibleCriteria) {
+        const selection = selectedOptions[criterion.id];
+        const files = uploadedFiles[criterion.id] || [];
+
+        if (!selection && files.length === 0) continue;
+
+        doc.addPage();
+        pageCount++;
+        let currentY = margin;
+
         doc.setFontSize(12);
-        doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
-        yPos += 8;
-        doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
-        
-        addFooter();
-        
-        for (const criterion of visibleCriteria) {
-            const selection = selectedOptions[criterion.id];
-            const files = uploadedFiles[criterion.id] || [];
+        doc.setFont('helvetica', 'bold');
+        doc.text(`(${criterion.type})`, pageWidth - margin, currentY, { align: 'right' });
 
-            // Only create pages for criteria that were attempted (have a selection or uploaded files)
-            if (!selection && files.length === 0) continue;
+        doc.setFillColor(230, 230, 230);
+        doc.rect(margin, currentY + 5, pageWidth - (margin * 2), 15, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(18);
+        const titleLines = doc.splitTextToSize(criterion.name, pageWidth - (margin * 2) - 10);
+        doc.text(titleLines, margin + 5, currentY + 13);
+        currentY += 25;
 
-            doc.addPage();
-            pageCount++;
-            let currentY = margin;
+        let textY = currentY + 8;
 
-            // Header section for the criterion
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`(${criterion.type})`, pageWidth - margin, currentY, { align: 'right' });
-            
-            doc.setFillColor(230, 230, 230); // Light grey background for title
-            doc.rect(margin, currentY + 5, pageWidth - (margin*2), 15, 'F');
-            doc.setTextColor(0,0,0);
-            doc.setFontSize(18);
-            const titleLines = doc.splitTextToSize(criterion.name, pageWidth - (margin*2) - 10);
-            doc.text(titleLines, margin + 5, currentY + 13);
-            currentY += 25;
+        const addDetail = (label: string, value: string, startY: number) => {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text(label, margin, startY);
+          doc.setFont('helvetica', 'normal');
+          const textLines = doc.splitTextToSize(value, pageWidth - margin * 2 - 35);
+          doc.text(textLines, margin + 35, startY);
+          return startY + textLines.length * 5 + 3;
+        };
 
-            
-            let textY = currentY + 8;
-            
-            const addDetail = (label: string, value: string, startY: number) => {
-              doc.setFontSize(10);
-              doc.setFont('helvetica', 'bold');
-              doc.text(label, margin, startY);
-              doc.setFont('helvetica', 'normal');
-              const textLines = doc.splitTextToSize(value, pageWidth - margin*2 - 35);
-              doc.text(textLines, margin + 35, startY);
-              return startY + textLines.length * 5 + 3;
-            };
-            
-            let bottomOfText = textY;
-            bottomOfText = addDetail('Requirements:', criterion.requirements, bottomOfText);
+        let bottomOfText = textY;
+        bottomOfText = addDetail('Requirements:', criterion.requirements, bottomOfText);
 
-            let statusText = "Not Attempted";
-            
-            if (criterion.type === 'Credit') {
-                const criterionScore = getCriterionScore(criterion);
-                const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-                bottomOfText = addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`, bottomOfText);
+        let statusText = "Not Attempted";
+        if (criterion.type === 'Credit') {
+          const criterionScore = getCriterionScore(criterion);
+          const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+          bottomOfText = addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`, bottomOfText);
 
-                if (Array.isArray(selection) && selection.length > 0) {
-                   statusText = `Selected: ${selection.join(', ')}`;
-                } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
-                    const options = getCriterionOptions(criterion);
-                    const selectedOption = options?.find(opt => opt.label === selection);
-                    statusText = selectedOption ? `Selected: ${selectedOption.label}` : "Achieved";
-                }
-            } else { // Mandatory
-                if (files.length > 0) {
-                    statusText = "Evidence Provided";
-                }
-            }
-             
-            bottomOfText = addDetail('Status:', statusText, bottomOfText);
-            
-            let imageY = bottomOfText + 5;
-
-            if (files.length > 0) {
-              const availableWidth = pageWidth - margin * 2;
-              const imgWidth = 80;
-              const imgHeight = 60;
-              const descHeight = 20;
-              const totalBlockHeight = imgHeight + descHeight;
-              const gap = 5;
-              const imagesPerRow = Math.floor(availableWidth / (imgWidth + gap));
-              let currentX = margin;
-
-              for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (imageY + totalBlockHeight > pageHeight - 15) {
-                   addFooter();
-                   doc.addPage();
-                   pageCount++;
-                   imageY = margin;
-                   currentX = margin;
-                   doc.setFontSize(12);
-                   doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth/2, imageY, {align: 'center'});
-                   imageY += 10;
-                }
-
-                try {
-                  doc.addImage(file.dataURL, 'JPEG', currentX, imageY, imgWidth, imgHeight);
-                  doc.setFontSize(8);
-                  doc.setFont('helvetica', 'normal');
-                  const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
-                  doc.text(descLines, currentX, imageY + imgHeight + 4);
-                } catch (e) {
-                  console.error("Error adding image:", e);
-                  doc.text("Error rendering image.", currentX + 5, imageY + 10);
-                }
-
-                currentX += imgWidth + gap;
-                if ((i + 1) % imagesPerRow === 0) {
-                  imageY += totalBlockHeight + gap;
-                  currentX = margin;
-                }
-              }
-            }
-            addFooter();
+          if (Array.isArray(selection) && selection.length > 0) {
+            statusText = `Selected: ${selection.join(', ')}`;
+          } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
+            const options = getCriterionOptions(criterion);
+            const selectedOption = options?.find(opt => opt.label === selection);
+            statusText = selectedOption ? `Selected: ${selectedOption.label}` : "Achieved";
+          }
+        } else {
+          if (files.length > 0) {
+            statusText = "Evidence Provided";
+          }
         }
-        
-        doc.save('UltraCertify-Report.pdf');
+        bottomOfText = addDetail('Status:', statusText, bottomOfText);
+
+        let imageY = bottomOfText + 5;
+
+        if (files.length > 0) {
+          const availableWidth = pageWidth - margin * 2;
+          const imgWidth = 80;
+          const imgHeight = 60;
+          const descHeight = 20;
+          const totalBlockHeight = imgHeight + descHeight;
+          const gap = 5;
+          const imagesPerRow = Math.floor(availableWidth / (imgWidth + gap));
+          let currentX = margin;
+
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (imageY + totalBlockHeight > pageHeight - 15) {
+              addFooter();
+              doc.addPage();
+              pageCount++;
+              imageY = margin;
+              currentX = margin;
+              doc.setFontSize(12);
+              doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
+              imageY += 10;
+            }
+
+            try {
+              doc.addImage(file.dataURL, 'JPEG', currentX, imageY, imgWidth, imgHeight);
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
+              doc.text(descLines, currentX, imageY + imgHeight + 4);
+            } catch (e) {
+              console.error("Error adding image:", e);
+              doc.text("Error rendering image.", currentX + 5, imageY + 10);
+            }
+
+            currentX += imgWidth + gap;
+            if ((i + 1) % imagesPerRow === 0) {
+              imageY += totalBlockHeight + gap;
+              currentX = margin;
+            }
+          }
+        }
+        addFooter();
+      }
+
+      doc.save('UltraCertify-Report.pdf');
 
     } catch (error) {
-        console.error("Failed to generate PDF:", error);
-        toast({
-            variant: "destructive",
-            title: "PDF Generation Failed",
-            description: "An unexpected error occurred. Please try again.",
-        });
+      console.error("Failed to generate PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "PDF Generation Failed",
+        description: "An unexpected error occurred. Please try again.",
+      });
     } finally {
-        setIsGeneratingPDF(false);
+      setIsGeneratingPDF(false);
     }
   };
 
   const handleSaveDraft = () => {
     setIsSavingDraft(true);
-    // Simulate API call
     setTimeout(() => {
-        toast({
-            title: "Draft Saved",
-            description: "Your project progress has been saved.",
-        });
-        setIsSavingDraft(false);
+      toast({
+        title: "Draft Saved",
+        description: "Your project progress has been saved.",
+      });
+      setIsSavingDraft(false);
     }, 1500);
-  }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -473,8 +460,8 @@ const UltraCertifyPage: FC = () => {
                 const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
                 const options = getCriterionOptions(criterion);
                 const currentPoints = getCriterionScore(criterion);
-                const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-                
+                const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+
                 return (
                   <AccordionItem value={criterion.id} key={criterion.id}>
                     <AccordionTrigger>
@@ -498,7 +485,7 @@ const UltraCertifyPage: FC = () => {
                         <div className="flex-1 md:col-span-2 space-y-4">
                           <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
                           <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
-                          
+
                           {criterion.type === 'Credit' && (
                             <>
                               {!options && (
@@ -511,7 +498,7 @@ const UltraCertifyPage: FC = () => {
                                   <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
                                 </div>
                               )}
-                              
+
                               {options && criterion.selectionType !== 'multiple' && (
                                 <div className="pt-2">
                                   <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
@@ -552,7 +539,8 @@ const UltraCertifyPage: FC = () => {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-              )}}
+                )
+              })}
             </Accordion>
           </CardContent>
         </Card>
@@ -578,30 +566,22 @@ const UltraCertifyPage: FC = () => {
               {certificationLevels.map(level => (
                 <div key={level.level} className="flex justify-between items-center text-sm">
                   <span className={`${level.color}`}>{level.level}</span>
-                  <span className="font-medium text-muted-foreground">{level.minScore[buildingType]}+ Points</span>
+                  <span className="font-medium text-muted-foreground">{level.minScore[buildingType as BuildingType]}+ Points</span>
                 </div>
               ))}
             </div>
           </CardContent>
           <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
-              {isSavingDraft ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
+              {isSavingDraft ? <Loader2 className="animate-spin" /> : <Save />}
               Save Draft
             </Button>
             <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
-              {isGeneratingPDF ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FileDown className="mr-2 h-4 w-4" />
-              )}
+              {isGeneratingPDF ? <Loader2 className="animate-spin" /> : <FileDown />}
               Generate PDF Report
             </Button>
-            <Button variant="link" className="md:col-span-2" onClick={() => window.location.href='/drafts'}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
+            <Button variant="link" className="md:col-span-2" onClick={() => window.location.href = '/drafts'}>
+              <ArrowLeft />
               Back to Drafts
             </Button>
           </CardFooter>
