@@ -11,9 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Roboto', 'sans-serif'],
-        headline: ['Roboto', 'sans-serif'],
-        code: ['monospace'],
+        sans: ['Roboto', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -98,5 +96,3 @@ export default {
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
-
-    
