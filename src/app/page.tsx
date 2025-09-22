@@ -333,18 +333,21 @@ const UltraCertifyPage: FC = () => {
         doc.addPage();
         pageCount++;
         let currentY = margin;
-
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`(${criterion.type})`, pageWidth - margin, currentY, { align: 'right' });
-
+        
         doc.setFillColor(230, 230, 230);
-        doc.rect(margin, currentY + 5, pageWidth - (margin * 2), 15, 'F');
+        doc.rect(margin, currentY, pageWidth - (margin * 2), 15, 'F');
+        
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(18);
-        const titleLines = doc.splitTextToSize(criterion.name, pageWidth - (margin * 2) - 10);
-        doc.text(titleLines, margin + 5, currentY + 13);
-        currentY += 25;
+        doc.setFont('helvetica', 'bold');
+        const titleLines = doc.splitTextToSize(criterion.name, pageWidth - (margin * 2) - 40);
+        doc.text(titleLines, margin + 5, currentY + 8);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`(${criterion.type})`, pageWidth - margin - 5, currentY + 8, { align: 'right' });
+        
+        currentY += 20;
 
         let textY = currentY + 8;
 
@@ -381,15 +384,14 @@ const UltraCertifyPage: FC = () => {
         }
         bottomOfText = addDetail('Status:', statusText, bottomOfText);
         
-        const textBlockHeight = bottomOfText - currentY;
         let imageY = bottomOfText + 5;
+        let imagesOnPage = 0;
 
         if (files.length > 0) {
            for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            
-            // Add a new page for each image to ensure it's large and clear
-            if (i > 0) {
+
+            if (imageY > pageHeight - 80 || i > 0) { 
                 addFooter();
                 doc.addPage();
                 pageCount++;
@@ -397,17 +399,6 @@ const UltraCertifyPage: FC = () => {
                 doc.setFontSize(12);
                 doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
                 imageY += 10;
-            } else {
-                 // Check if there is enough space on the current page for the first image
-                 if (imageY > pageHeight - 80) { // arbitrary 80mm space for a decent image
-                    addFooter();
-                    doc.addPage();
-                    pageCount++;
-                    imageY = margin;
-                    doc.setFontSize(12);
-                    doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth / 2, imageY, { align: 'center' });
-                    imageY += 10;
-                 }
             }
 
             try {
@@ -420,7 +411,7 @@ const UltraCertifyPage: FC = () => {
               const aspectRatio = imgWidth / imgHeight;
 
               const maxImgWidth = pageWidth - (margin * 2);
-              const maxImgHeight = pageHeight - imageY - 25; // 25 for desc and footer
+              const maxImgHeight = pageHeight - imageY - 25; 
 
               let finalWidth = maxImgWidth;
               let finalHeight = finalWidth / aspectRatio;
@@ -443,6 +434,7 @@ const UltraCertifyPage: FC = () => {
               doc.setFont('helvetica', 'italic');
               const descLines = doc.splitTextToSize(file.description || 'No description provided.', finalWidth);
               doc.text(descLines, xPos, descY);
+              imageY = descY + descLines.length * 4 + 5;
 
             } catch (e) {
               console.error("Error adding image to PDF:", e);
@@ -450,6 +442,7 @@ const UltraCertifyPage: FC = () => {
               doc.setTextColor(150);
               doc.text("[Could not render image]", pageWidth/2, imageY + 40, { align: 'center' });
               doc.setTextColor(0);
+              imageY += 50;
             }
           }
         }
@@ -817,3 +810,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
