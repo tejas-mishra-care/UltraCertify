@@ -47,5 +47,3 @@ export type UploadedFile = {
   dataURL: string;
   description: string;
 };
-
-    

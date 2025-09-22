@@ -153,5 +153,3 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     </>
   );
 };
-
-    

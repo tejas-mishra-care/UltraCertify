@@ -357,13 +357,6 @@ const UltraCertifyPage: FC = () => {
         addFooter();
         
         for (const criterion of visibleCriteria) {
-            const files = uploadedFiles[criterion.id] || [];
-            // Only create pages for criteria that were attempted (have a score or evidence)
-            const criterionScore = getCriterionScore(criterion);
-            if (criterionScore === 0 && files.length === 0 && criterion.type === 'Credit') {
-                continue;
-            }
-
             doc.addPage();
             pageCount++;
             let currentY = margin;
@@ -407,6 +400,7 @@ const UltraCertifyPage: FC = () => {
             const selection = selectedOptions[criterion.id];
             
             if (criterion.type === 'Credit') {
+                const criterionScore = getCriterionScore(criterion);
                 const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
                 addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`);
 
@@ -425,6 +419,7 @@ const UltraCertifyPage: FC = () => {
              
             addDetail('Status:', statusText);
 
+            const files = uploadedFiles[criterion.id] || [];
             currentY = textY + 5; // Y position for images
 
             if (files.length > 0) {
@@ -860,5 +855,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    

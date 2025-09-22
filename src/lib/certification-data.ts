@@ -32,8 +32,8 @@ export const criteria: Criterion[] = [
   },
   // Credit Criteria
   {
-    id: 'passive-architecture',
-    name: 'Passive Architecture',
+    id: 'passive-architecture-features', // Changed ID to be more specific
+    name: 'Passive Architecture Features',
     applicability: { New: true, Existing: true },
     type: 'Credit',
     requirements: 'Provide any two features mentioned below. For each feature two points (max 4 points): 1. Courtyard 2. Vernacular materials 3. Local Vernacular Elements 4. Any other passive cooling/Heating system 5. Skylights',
@@ -60,8 +60,8 @@ export const criteria: Criterion[] = [
     points: 1,
   },
   {
-    id: 'setbacks', // Note: Corrected name from checklist seems to be Passive Architecture again, using old ID for stability.
-    name: 'Setbacks',
+    id: 'passive-architecture-setbacks',
+    name: 'Passive Architecture (Setbacks)',
     applicability: { New: true, Existing: true },
     type: 'Credit',
     requirements: 'Provide minimum of 3 ft setback or as per local norms whichever is higher on 2 sides (1 point) More than 2 sides (2 points)',
@@ -119,7 +119,7 @@ export const criteria: Criterion[] = [
     name: 'Indoor Plants - 5 Plants (Minimum)',
     applicability: { New: true, Existing: true },
     type: 'Credit',
-    requirements: 'Grow Indoor Plants',
+    requirements: 'Grow a minimum of 5 indoor plants',
     documents: 'Photographs of the indoor plants. List of indoor plants.',
     points: 1,
   },
@@ -453,5 +453,3 @@ export const certificationLevels: CertificationLevel[] = [
   { level: 'Silver', minScore: { New: 50, Existing: 45 }, color: 'text-gray-500' },
   { level: 'Gold', minScore: { New: 65, Existing: 60 }, color: 'text-yellow-500' },
 ];
-
-    
