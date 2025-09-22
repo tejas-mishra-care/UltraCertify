@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import type { UploadedFile } from '@/lib/types';
 import { CameraCapture } from './camera-capture';
-import { ScrollArea } from './ui/scroll-area';
+import { ScrollArea, ScrollBar } from './ui/scroll-area';
 import { Textarea } from './ui/textarea';
 
 interface ImageUploaderProps {
@@ -93,12 +93,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
 
   return (
     <>
-      <div className="w-full h-auto flex flex-col">
+      <div className="w-full h-auto flex flex-col gap-2">
         {uploadedFiles.length > 0 && (
-          <ScrollArea className="flex-1 max-h-96 mb-2">
-            <div className="space-y-4 pr-4">
+          <ScrollArea className="w-full whitespace-nowrap rounded-md">
+            <div className="flex w-max space-x-4 p-4">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="space-y-2">
+                <div key={index} className="space-y-2 flex-shrink-0 w-48">
                    <div className="relative w-full aspect-video group">
                       <Image
                         src={file.preview}
@@ -114,7 +114,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
                       </div>
                     </div>
                     <Textarea
-                        placeholder="Add a description for this image..."
+                        placeholder="Add a description..."
                         value={file.description}
                         onChange={(e) => handleDescriptionChange(index, e.target.value)}
                         className="text-sm"
@@ -123,6 +123,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
                 </div>
               ))}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         )}
 

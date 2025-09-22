@@ -384,13 +384,12 @@ const UltraCertifyPage: FC = () => {
         let imageY = bottomOfText + 5;
 
         if (files.length > 0) {
-          const availableWidth = pageWidth - margin * 2;
-          const imgWidth = 80;
-          const imgHeight = 60;
+          const imgWidth = 100;
+          const imgHeight = 75;
           const descHeight = 20;
           const totalBlockHeight = imgHeight + descHeight;
-          const gap = 5;
-          const imagesPerRow = Math.floor(availableWidth / (imgWidth + gap));
+          const gap = 10;
+          const imagesPerRow = 1; // Force one image per row
           let currentX = margin;
 
           for (let i = 0; i < files.length; i++) {
@@ -423,7 +422,7 @@ const UltraCertifyPage: FC = () => {
               console.error("Error adding image to PDF:", e);
               doc.setFontSize(8);
               doc.setTextColor(150);
-              doc.text("[Could not render image]", currentX, imageY + imgHeight / 2);
+              doc.text("[Could not render image]", currentX + (imgWidth/2), imageY + imgHeight / 2, { align: 'center' });
               doc.setTextColor(0);
             }
 
