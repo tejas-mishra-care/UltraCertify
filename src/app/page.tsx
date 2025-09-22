@@ -447,154 +447,15 @@ const UltraCertifyPage: FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Certification Criteria</CardTitle>
-            <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="single" collapsible className="w-full">
-              {visibleCriteria.map((criterion) => {
-                const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
-                const options = getCriterionOptions(criterion);
-                const currentPoints = getCriterionScore(criterion);
-                const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
-
-                return (
-                  <AccordionItem value={criterion.id} key={criterion.id}>
-                    <AccordionTrigger>
-                      <div className="flex items-center gap-4 flex-1 pr-4">
-                        <CheckCircle2 className={`h-5 w-5 shrink-0 ${(currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved)) ? 'text-green-500' : 'text-muted-foreground/50'}`} />
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{criterion.name}</h3>
-                            <Badge variant={criterion.type === 'Mandatory' ? 'destructive' : 'secondary'}>{criterion.type}</Badge>
-                          </div>
-                          {criterion.type === 'Credit' && (
-                            <p className="text-sm font-medium text-primary mt-1">
-                              Points: {currentPoints} / {maxPoints}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-6 p-4">
-                        <div className="flex-1 md:col-span-2 space-y-4">
-                          <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
-                          <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
-
-                          {criterion.type === 'Credit' && (
-                            <>
-                              {!options && (
-                                <div className="flex items-center space-x-2 pt-2">
-                                  <Checkbox
-                                    id={`${criterion.id}-achieved`}
-                                    checked={selectedOptions[criterion.id] === 'true'}
-                                    onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
-                                  />
-                                  <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
-                                </div>
-                              )}
-
-                              {options && criterion.selectionType !== 'multiple' && (
-                                <div className="pt-2">
-                                  <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
-                                    <SelectTrigger className="w-full md:w-[280px]">
-                                      <SelectValue placeholder="Select achieved level..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
-                                      {options.map(opt => (
-                                        <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
-
-                              {options && criterion.selectionType === 'multiple' && (
-                                <div className="pt-2 space-y-2">
-                                  {options.map(opt => (
-                                    <div key={opt.label} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`${criterion.id}-${opt.label}`}
-                                        checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
-                                        onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
-                                      />
-                                      <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                        <ImageUploader
-                          criterionId={criterion.id}
-                          onFileChange={handleFileChange}
-                        />
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )
-              })}
-            </Accordion>
-          </CardContent>
-        </Card>
-      </div>
-      <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Score</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between items-baseline mb-1">
-                <span className="text-sm font-medium text-primary">Progress</span>
-                <span className={`text-lg font-bold ${certificationLevel.color}`}>{certificationLevel.level}</span>
-              </div>
-              <Progress value={progress} className="w-full h-3" />
-              <p className="text-right mt-1 text-lg font-bold">
-                {currentScore} / {maxScore} Points
-              </p>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              {certificationLevels.map(level => (
-                <div key={level.level} className="flex justify-between items-center text-sm">
-                  <span className={`${level.color}`}>{level.level}</span>
-                  <span className="font-medium text-muted-foreground">{level.minScore[buildingType as BuildingType]}+ Points</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-          <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
-              {isSavingDraft ? <Loader2 className="animate-spin" /> : <Save />}
-              Save Draft
-            </Button>
-            <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
-              {isGeneratingPDF ? <Loader2 className="animate-spin" /> : <FileDown />}
-              Generate PDF Report
-            </Button>
-            <Button variant="link" className="md:col-span-2" onClick={() => window.location.href = '/drafts'}>
-              <ArrowLeft />
-              Back to Drafts
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card>
+    <div className="space-y-8">
+      <Card>
           <CardHeader>
             <CardTitle>Project Details</CardTitle>
-            <CardDescription>Fill in the information for your project.</CardDescription>
+            <CardDescription>Fill in the information for your project. This information will be used in the final report.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form className="space-y-4">
+              <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <FormField control={form.control} name="buildingType" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Building Type</FormLabel>
@@ -773,7 +634,148 @@ const UltraCertifyPage: FC = () => {
             </Form>
           </CardContent>
         </Card>
-      </aside>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Certification Criteria</CardTitle>
+              <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                {visibleCriteria.map((criterion) => {
+                  const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
+                  const options = getCriterionOptions(criterion);
+                  const currentPoints = getCriterionScore(criterion);
+                  const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+
+                  return (
+                    <AccordionItem value={criterion.id} key={criterion.id}>
+                      <AccordionTrigger>
+                        <div className="flex items-center gap-4 flex-1 pr-4">
+                          <CheckCircle2 className={`h-5 w-5 shrink-0 ${(currentPoints > 0 || (criterion.type === 'Mandatory' && isAchieved)) ? 'text-green-500' : 'text-muted-foreground/50'}`} />
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold">{criterion.name}</h3>
+                              <Badge variant={criterion.type === 'Mandatory' ? 'destructive' : 'secondary'}>{criterion.type}</Badge>
+                            </div>
+                            {criterion.type === 'Credit' && (
+                              <p className="text-sm font-medium text-primary mt-1">
+                                Points: {currentPoints} / {maxPoints}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-6 p-4">
+                          <div className="flex-1 md:col-span-2 space-y-4">
+                            <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
+                            <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
+
+                            {criterion.type === 'Credit' && (
+                              <>
+                                {!options && (
+                                  <div className="flex items-center space-x-2 pt-2">
+                                    <Checkbox
+                                      id={`${criterion.id}-achieved`}
+                                      checked={selectedOptions[criterion.id] === 'true'}
+                                      onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
+                                    />
+                                    <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
+                                  </div>
+                                )}
+
+                                {options && criterion.selectionType !== 'multiple' && (
+                                  <div className="pt-2">
+                                    <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
+                                      <SelectTrigger className="w-full md:w-[280px]">
+                                        <SelectValue placeholder="Select achieved level..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
+                                        {options.map(opt => (
+                                          <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+
+                                {options && criterion.selectionType === 'multiple' && (
+                                  <div className="pt-2 space-y-2">
+                                    {options.map(opt => (
+                                      <div key={opt.label} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`${criterion.id}-${opt.label}`}
+                                          checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
+                                          onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
+                                        />
+                                        <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          <ImageUploader
+                            criterionId={criterion.id}
+                            onFileChange={handleFileChange}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )
+                })}
+              </Accordion>
+            </CardContent>
+          </Card>
+        </div>
+        <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+          <Card>
+            <CardHeader>
+              <CardTitle>Project Score</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm font-medium text-primary">Progress</span>
+                  <span className={`text-lg font-bold ${certificationLevel.color}`}>{certificationLevel.level}</span>
+                </div>
+                <Progress value={progress} className="w-full h-3" />
+                <p className="text-right mt-1 text-lg font-bold">
+                  {currentScore} / {maxScore} Points
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                {certificationLevels.map(level => (
+                  <div key={level.level} className="flex justify-between items-center text-sm">
+                    <span className={`${level.color}`}>{level.level}</span>
+                    <span className="font-medium text-muted-foreground">{level.minScore[buildingType as BuildingType]}+ Points</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
+                {isSavingDraft ? <Loader2 className="animate-spin" /> : <Save />}
+                Save Draft
+              </Button>
+              <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
+                {isGeneratingPDF ? <Loader2 className="animate-spin" /> : <FileDown />}
+                Generate PDF Report
+              </Button>
+              <Button variant="link" className="md:col-span-2" onClick={() => window.location.href = '/drafts'}>
+                <ArrowLeft />
+                Back to Drafts
+              </Button>
+            </CardFooter>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 };
