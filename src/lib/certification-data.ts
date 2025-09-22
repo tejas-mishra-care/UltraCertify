@@ -126,7 +126,7 @@ export const criteria: Criterion[] = [
   {
     id: 'vehicle-shading',
     name: 'Vehicle shading',
-    applicability: { New: true, Existing: true },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Provide shade for vehicles via tree shade or covered parking.',
     documents: 'Photographs of the vehicle shading.',
@@ -135,7 +135,7 @@ export const criteria: Criterion[] = [
   {
     id: 'bicycle-commuting',
     name: 'Bicycle for commuting',
-    applicability: { New: true, Existing: true },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Use at least one bicycle and provide dedicated parking.',
     documents: 'Photographs of bicycle in its parking space.',
@@ -403,7 +403,7 @@ export const criteria: Criterion[] = [
     ]
   },
   {
-    id: 'home-automation',
+    id: 'house-automation',
     name: 'House Automation',
     applicability: { New: true, Existing: true },
     type: 'Credit',
