@@ -20,7 +20,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-sans antialiased bg-secondary/50">
+      <body className="antialiased bg-secondary/50">
         <main id="main-content" className="min-h-screen p-2 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-8">
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
