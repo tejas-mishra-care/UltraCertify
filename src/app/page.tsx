@@ -401,11 +401,18 @@ const UltraCertifyPage: FC = () => {
             }
 
             try {
-              doc.addImage(file.dataURL, 'JPEG', currentX, imageY, imgWidth, imgHeight);
-              doc.setFontSize(8);
-              doc.setFont('helvetica', 'normal');
-              const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
-              doc.text(descLines, currentX, imageY + imgHeight + 4);
+              const urlMatch = file.dataURL.match(/^data:(image\/(jpeg|png));base64,(.*)$/);
+              if (urlMatch) {
+                const imageType = urlMatch[2].toUpperCase();
+                doc.addImage(file.dataURL, imageType, currentX, imageY, imgWidth, imgHeight);
+
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
+                doc.text(descLines, currentX, imageY + imgHeight + 4);
+              } else {
+                 doc.text("Invalid image format.", currentX + 5, imageY + 10);
+              }
             } catch (e) {
               console.error("Error adding image:", e);
               doc.text("Error rendering image.", currentX + 5, imageY + 10);
