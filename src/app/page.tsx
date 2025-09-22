@@ -233,19 +233,25 @@ const UltraCertifyPage: FC = () => {
     });
 
     try {
-      const logoImg = new window.Image();
-      logoImg.src = '/ultratech-logo.png';
-      await new Promise((resolve, reject) => {
-        logoImg.onload = resolve;
-        logoImg.onerror = reject;
-      });
-      const ultratechLogoBase64 = getBase64Image(logoImg);
-
       const doc = new jsPDF('l', 'mm', 'a4');
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 15;
       let pageCount = 1;
+
+      // --- Load Logo ---
+      let ultratechLogoBase64 = '';
+      try {
+        const logoImg = new window.Image();
+        logoImg.src = '/ultratech-logo.png';
+        await new Promise((resolve, reject) => {
+          logoImg.onload = resolve;
+          logoImg.onerror = reject;
+        });
+        ultratechLogoBase64 = getBase64Image(logoImg);
+      } catch (e) {
+        console.error("Could not load logo image for PDF.", e);
+      }
 
       const addFooter = () => {
         doc.setFontSize(8);
@@ -401,21 +407,24 @@ const UltraCertifyPage: FC = () => {
             }
 
             try {
-              const urlMatch = file.dataURL.match(/^data:(image\/(jpeg|png));base64,(.*)$/);
-              if (urlMatch) {
-                const imageType = urlMatch[2].toUpperCase();
-                doc.addImage(file.dataURL, imageType, currentX, imageY, imgWidth, imgHeight);
-
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
-                doc.text(descLines, currentX, imageY + imgHeight + 4);
-              } else {
-                 doc.text("Invalid image format.", currentX + 5, imageY + 10);
+              const urlMatch = file.dataURL.match(/^data:image\/(jpeg|png);base64,/);
+              if (!urlMatch) {
+                throw new Error("Invalid image dataURL format.");
               }
+              const imageType = urlMatch[1].toUpperCase();
+              doc.addImage(file.dataURL, imageType, currentX, imageY, imgWidth, imgHeight);
+              
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
+              doc.text(descLines, currentX, imageY + imgHeight + 4);
+
             } catch (e) {
-              console.error("Error adding image:", e);
-              doc.text("Error rendering image.", currentX + 5, imageY + 10);
+              console.error("Error adding image to PDF:", e);
+              doc.setFontSize(8);
+              doc.setTextColor(150);
+              doc.text("[Could not render image]", currentX, imageY + imgHeight / 2);
+              doc.setTextColor(0);
             }
 
             currentX += imgWidth + gap;
@@ -435,12 +444,13 @@ const UltraCertifyPage: FC = () => {
       toast({
         variant: "destructive",
         title: "PDF Generation Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please check the console for details.",
       });
     } finally {
       setIsGeneratingPDF(false);
     }
   };
+
 
   const handleSaveDraft = () => {
     setIsSavingDraft(true);
