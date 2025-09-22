@@ -25,7 +25,6 @@ import {
   Bike,
   Save,
   ArrowLeft,
-  Lightbulb,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -61,18 +60,6 @@ import { useToast } from "@/hooks/use-toast";
 import type { UploadedFile, ProjectData, Criterion, CriterionOption, BuildingType } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-// This is an empty import, so we can remove it.
-// import { suggestApplicableCredits } from "@/app/actions";
 
 
 const projectSchema = z.object({
@@ -96,9 +83,6 @@ const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<Criterion[]>([]);
-  const [isSuggestionDialogOpen, setIsSuggestionDialogOpen] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
 
   const { toast } = useToast();
@@ -487,42 +471,6 @@ const UltraCertifyPage: FC = () => {
     }, 1500);
   };
 
-  const handleGetSuggestions = async () => {
-    setIsSuggestionLoading(true);
-    const allFiles = Object.values(uploadedFiles).flat();
-
-    if (allFiles.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'No Images Uploaded',
-        description: 'Please upload at least one image to get suggestions.',
-      });
-      setIsSuggestionLoading(false);
-      return;
-    }
-
-    try {
-      // This is a placeholder for the actual API call.
-      // const result = await suggestApplicableCredits(allFiles);
-      // const suggestedCriteria = criteria.filter(c => result.includes(c.id));
-      // For now, we'll use a mock result.
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockResult = ['renewable-energy', 'vegetation-natural-topography'];
-      const suggestedCriteria = criteria.filter(c => mockResult.includes(c.id));
-      setSuggestions(suggestedCriteria);
-      setIsSuggestionDialogOpen(true);
-    } catch (error) {
-      console.error('Failed to get suggestions:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Suggestion Failed',
-        description: 'Could not get AI-powered credit suggestions.',
-      });
-    } finally {
-      setIsSuggestionLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-8">
       <Card>
@@ -842,10 +790,6 @@ const UltraCertifyPage: FC = () => {
                 <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4">
-              <Button onClick={handleGetSuggestions} disabled={isSuggestionLoading}>
-                {isSuggestionLoading ? <Loader2 className="animate-spin" /> : <Lightbulb />}
-                Suggest Applicable Credits
-              </Button>
                <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
                 {isSavingDraft ? <Loader2 className="animate-spin" /> : <Save />}
                 Save Draft
@@ -864,34 +808,10 @@ const UltraCertifyPage: FC = () => {
           </Card>
         </aside>
       </div>
-       <AlertDialog open={isSuggestionDialogOpen} onOpenChange={setIsSuggestionDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>AI-Powered Suggestions</AlertDialogTitle>
-            <AlertDialogDescription>
-              Based on your uploaded images, here are some other credits you might be eligible for:
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="max-h-60 overflow-y-auto p-1">
-            {suggestions.length > 0 ? (
-                <ul className="space-y-2">
-                    {suggestions.map(s => (
-                        <li key={s.id} className="p-3 bg-secondary/50 rounded-md text-sm font-medium">
-                            {s.name}
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No specific credits could be identified from the images.</p>
-            )}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogAction>Got it, thanks!</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
 
 export default UltraCertifyPage;
+
+    
