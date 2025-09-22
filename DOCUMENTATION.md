@@ -84,7 +84,7 @@ The project is built with Next.js (App Router). Here are the key files and direc
 - **`src/lib/`**: Contains shared logic, data, and type definitions.
     - `certification-data.ts`: This is a crucial file that holds the master list of all IGBC criteria, their points, applicability, and selectable options for dropdowns/checkboxes.
     - `types.ts`: Defines the TypeScript data structures used throughout the app (e.g., `Criterion`, `ProjectData`).
-    - `ultratech-logo.png`: The official brand logo used in the UI and the PDF report.
+- **`public/ultratech-logo.png`**: The official brand logo used in the UI and the PDF report.
 - **`src/ai/` & `src/app/actions.ts`**: These files manage the backend Genkit AI flow for credit suggestions.
 
 ---
