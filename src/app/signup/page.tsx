@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, KeyRound } from "lucide-react";
+import { Mail, KeyRound, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, you'd handle Firebase authentication here.
     // For this prototype, we'll just navigate to the drafts page.
@@ -30,13 +30,20 @@ export default function LoginPage() {
     <div className="flex items-center justify-center py-12">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>
-            Enter your credentials to access your certification drafts.
+            Create an account to save and manage your projects.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignup}>
           <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Full Name</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="name" placeholder="Jane Doe" required className="pl-9" />
+              </div>
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -53,9 +60,9 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button className="w-full" type="submit">Sign in</Button>
+            <Button className="w-full" type="submit">Create Account</Button>
             <p className="text-xs text-center text-muted-foreground">
-                Don&apos;t have an account? <Link href="/signup" className="underline">Sign up</Link>
+                Already have an account? <Link href="/login" className="underline">Sign in</Link>
             </p>
           </CardFooter>
         </form>
