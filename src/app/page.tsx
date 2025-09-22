@@ -23,12 +23,10 @@ import {
   Mail,
   Phone,
   Bike,
-  Save,
-  ArrowLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -57,7 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import type { UploadedFile, ProjectData, Criterion, CriterionOption, BuildingType } from "@/lib/types";
+import type { UploadedFile, Criterion, CriterionOption, BuildingType } from "@/lib/types";
 import { criteria, certificationLevels } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
 
@@ -82,7 +80,6 @@ const projectSchema = z.object({
 const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
 
   const { toast } = useToast();
@@ -459,18 +456,6 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
-
-  const handleSaveDraft = () => {
-    setIsSavingDraft(true);
-    setTimeout(() => {
-      toast({
-        title: "Draft Saved",
-        description: "Your project progress has been saved.",
-      });
-      setIsSavingDraft(false);
-    }, 1500);
-  };
-
   return (
     <div className="space-y-8">
       <Card>
@@ -790,21 +775,11 @@ const UltraCertifyPage: FC = () => {
                 <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4">
-               <Button onClick={handleSaveDraft} disabled={isSavingDraft}>
-                {isSavingDraft ? <Loader2 className="animate-spin" /> : <Save />}
-                Save Draft
-              </Button>
               <Button onClick={handleGeneratePDF} variant="outline" disabled={!form.formState.isValid || isGeneratingPDF}>
                 {isGeneratingPDF ? <Loader2 className="animate-spin" /> : <FileDown />}
                 Generate PDF Report
               </Button>
             </CardContent>
-             <CardFooter>
-                <Button variant="link" className="w-full" onClick={() => window.location.href = '/drafts'}>
-                    <ArrowLeft />
-                    Back to Drafts
-                </Button>
-            </CardFooter>
           </Card>
         </aside>
       </div>
@@ -813,5 +788,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    
