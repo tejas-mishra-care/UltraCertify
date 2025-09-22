@@ -25,7 +25,7 @@ export default function RootLayout({
             <div className="max-w-7xl mx-auto space-y-8">
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center gap-4">
-                        <Image src="/ultratech-logo.png" alt="UltraTech Logo" width={200} height={69} />
+                        <Image src="/ultratech-logo.png" alt="UltraTech Logo" width={200} height={69} priority />
                     </div>
                     <div className="flex flex-col items-end text-right">
                         <span className="font-semibold text-lg text-primary">UltraCertify</span>
