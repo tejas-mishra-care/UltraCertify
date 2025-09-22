@@ -264,7 +264,7 @@ const UltraCertifyPage: FC = () => {
       return '';
   };
 
-  const handleGeneratePDF = async () => {
+ const handleGeneratePDF = async () => {
     setIsGeneratingPDF(true);
     toast({
         title: "Generating Report...",
@@ -357,38 +357,48 @@ const UltraCertifyPage: FC = () => {
         addFooter();
         
         for (const criterion of visibleCriteria) {
+            const files = uploadedFiles[criterion.id] || [];
+            // Only create pages for criteria that were attempted (have a score or evidence)
+            const criterionScore = getCriterionScore(criterion);
+            if (criterionScore === 0 && files.length === 0 && criterion.type === 'Credit') {
+                continue;
+            }
+
             doc.addPage();
             pageCount++;
-            let yPos = margin;
+            let currentY = margin;
 
             // Header section for the criterion
-            doc.setFillColor(230, 230, 230); // Light grey background for title
-            doc.rect(margin, yPos, 80, 20, 'F');
-            doc.setTextColor(44, 90, 160); // Primary color
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            const titleLines = doc.splitTextToSize(criterion.name, 75);
-            doc.text(titleLines, margin + 5, yPos + (20 - titleLines.length * 5)/2 + 4);
-
-            const textContentX = margin + 85;
-            const contentWidth = pageWidth - textContentX - margin;
-            yPos += 2;
-
             doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(0, 0, 0);
-            doc.text(`(${criterion.type})`, pageWidth - margin, yPos, { align: 'right' });
-            yPos += 8;
+            doc.setFont('helvetica', 'bold');
+            doc.text(`(${criterion.type})`, pageWidth - margin, currentY, { align: 'right' });
             
-            // Details section
+            doc.setFillColor(230, 230, 230); // Light grey background for title
+            doc.rect(margin, currentY + 5, 80, 20, 'F');
+            doc.setTextColor(0,0,0);
+            doc.setFontSize(16);
+            const titleLines = doc.splitTextToSize(criterion.name, 75);
+            doc.text(titleLines, margin + 5, currentY + 5 + (20 - titleLines.length * 5)/2 + 4);
+
+            const textContentX = margin + 95;
+            const contentWidth = pageWidth - textContentX - margin;
+            
+            let textY = currentY + 8;
+            
             const addDetail = (label: string, value: string) => {
+              if (textY > pageHeight - 20) { // Check if new page is needed for text
+                addFooter();
+                doc.addPage();
+                pageCount++;
+                textY = margin;
+              }
               doc.setFontSize(10);
               doc.setFont('helvetica', 'bold');
-              doc.text(label, textContentX, yPos);
+              doc.text(label, textContentX, textY);
               doc.setFont('helvetica', 'normal');
               const textLines = doc.splitTextToSize(value, contentWidth - 30);
-              doc.text(textLines, textContentX + 35, yPos);
-              yPos += textLines.length * 5 + 3;
+              doc.text(textLines, textContentX + 35, textY);
+              textY += textLines.length * 5 + 3;
             };
             
             addDetail('Requirements:', criterion.requirements);
@@ -397,9 +407,8 @@ const UltraCertifyPage: FC = () => {
             const selection = selectedOptions[criterion.id];
             
             if (criterion.type === 'Credit') {
-                const points = getCriterionScore(criterion);
                 const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType];
-                addDetail('Points Awarded:', `${points} / ${maxPoints}`);
+                addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`);
 
                 if (Array.isArray(selection) && selection.length > 0) {
                    statusText = `Selected: ${selection.join(', ')}`;
@@ -416,66 +425,49 @@ const UltraCertifyPage: FC = () => {
              
             addDetail('Status:', statusText);
 
-            const files = uploadedFiles[criterion.id] || [];
+            currentY = textY + 5; // Y position for images
+
             if (files.length > 0) {
-                yPos += 5; // Space before images
+              const availableHeight = pageHeight - currentY - 15;
+              const imgWidth = 80;
+              const imgHeight = 60;
+              const descHeight = 20;
+              const totalBlockHeight = imgHeight + descHeight;
+              const gap = 5;
+              const imagesPerRow = 3;
+              let currentX = margin;
 
-                const imagesPerPage = 6;
-                const imagesToRender = [...files];
-
-                let imgWidth = 80;
-                let imgHeight = 60;
-                let gap = 5;
-                
-                const renderImageRow = (imageList: UploadedFile[], startX: number, startY: number) => {
-                  let currentX = startX;
-                  for(const file of imageList){
-                    try {
-                        doc.addImage(file.dataURL, 'JPEG', currentX, startY, imgWidth, imgHeight);
-                    } catch (e) {
-                        console.error("Error adding image:", e);
-                        doc.text("Error rendering image.", currentX + 5, startY + 10);
-                    }
-                    currentX += imgWidth + gap;
-                  }
-                }
-                
-                const imageChunks: UploadedFile[][] = [];
-                for (let i = 0; i < imagesToRender.length; i += imagesPerPage) {
-                    imageChunks.push(imagesToRender.slice(i, i + imagesPerPage));
+              for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (currentY + totalBlockHeight > pageHeight - 15) {
+                   addFooter();
+                   doc.addPage();
+                   pageCount++;
+                   currentY = margin;
+                   currentX = margin;
+                   doc.setFontSize(12);
+                   doc.text(`Evidence for: ${criterion.name} (continued)`, pageWidth/2, currentY, {align: 'center'});
+                   currentY += 10;
                 }
 
-                for (let i = 0; i < imageChunks.length; i++) {
-                    if (i > 0) {
-                        doc.addPage();
-                        pageCount++;
-                        let currentY = margin;
-                        doc.setFontSize(14);
-                        doc.text(`Additional Evidence for: ${criterion.name}`, pageWidth / 2, currentY, {align: 'center'});
-                        currentY += 10;
-                        const chunk = imageChunks[i];
-                        if (chunk.length <= 3) {
-                           renderImageRow(chunk, margin, currentY);
-                        } else {
-                           const row1 = chunk.slice(0,3);
-                           const row2 = chunk.slice(3);
-                           renderImageRow(row1, margin, currentY);
-                           renderImageRow(row2, margin, currentY + imgHeight + gap);
-                        }
-                    } else {
-                        const chunk = imageChunks[i];
-                        if (chunk.length <= 3) {
-                           renderImageRow(chunk, margin, yPos);
-                        } else {
-                           const row1 = chunk.slice(0,3);
-                           const row2 = chunk.slice(3);
-                           renderImageRow(row1, margin, yPos);
-                           renderImageRow(row2, margin, yPos + imgHeight + gap);
-                        }
-                    }
+                try {
+                  doc.addImage(file.dataURL, 'JPEG', currentX, currentY, imgWidth, imgHeight);
+                  doc.setFontSize(8);
+                  doc.setFont('helvetica', 'normal');
+                  const descLines = doc.splitTextToSize(file.description || 'No description provided.', imgWidth);
+                  doc.text(descLines, currentX, currentY + imgHeight + 4);
+                } catch (e) {
+                  console.error("Error adding image:", e);
+                  doc.text("Error rendering image.", currentX + 5, currentY + 10);
                 }
+
+                currentX += imgWidth + gap;
+                if ((i + 1) % imagesPerRow === 0) {
+                  currentY += totalBlockHeight + gap;
+                  currentX = margin;
+                }
+              }
             }
-
             addFooter();
         }
         

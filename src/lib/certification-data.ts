@@ -60,7 +60,7 @@ export const criteria: Criterion[] = [
     points: 1,
   },
   {
-    id: 'setbacks',
+    id: 'setbacks', // Note: Corrected name from checklist seems to be Passive Architecture again, using old ID for stability.
     name: 'Setbacks',
     applicability: { New: true, Existing: true },
     type: 'Credit',
@@ -99,7 +99,7 @@ export const criteria: Criterion[] = [
   {
     id: 'vegetables-fruits',
     name: 'Vegetables / Fruits - 2 varieties',
-    applicability: { New: true, Existing: false },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Grow a minimum of two vegetable/Fruit species.',
     documents: 'Photographs of the vegetable plants',
@@ -108,7 +108,7 @@ export const criteria: Criterion[] = [
   {
     id: 'medicinal-plants',
     name: 'Medicinal Plants- 2 varieties',
-    applicability: { New: true, Existing: false },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Grow a minimum of two medicinal species',
     documents: 'Photographs of the Medicinal plants',
@@ -126,7 +126,7 @@ export const criteria: Criterion[] = [
   {
     id: 'vehicle-shading',
     name: 'Vehicle shading',
-    applicability: { New: true, Existing: false },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Provide shade for vehicles using either by tree shade or covered parking space.',
     documents: 'Photographs of the vehicles shading',
@@ -135,7 +135,7 @@ export const criteria: Criterion[] = [
   {
     id: 'bicycle-commuting',
     name: 'Bicycle for commuting',
-    applicability: { New: true, Existing: false },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Use at least one bicycle for commuting purpose and provide dedicated parking space.',
     documents: 'Photographs of the bicycle parking in the dedicated parking space',
@@ -236,17 +236,15 @@ export const criteria: Criterion[] = [
     name: 'Energy Efficient Appliances',
     applicability: { New: true, Existing: true },
     type: 'Credit',
-    requirements: 'Procure 100% BEE / Energy Certified appliances. New Building: LED lights (1pt), 3 Star Fans (1pt), Inverter Refrigerator (1pt), 3/5 Star Inverter AC (1/2pts). Existing Building: LED (2pts), Fans (3pts), Refrigerator (1pt), 3/5 Star AC (1/2pts).',
+    requirements: 'Procure 100% BEE / Energy Certified appliances.',
     documents: 'Photographs of installed energy efficient appliances with star ratings',
-    points: { New: 5, Existing: 8 },
+    points: { New: 4, Existing: 10 },
     selectionType: 'multiple',
     options: {
       New: [
         { label: 'LED lights', points: 1 },
-        { label: '3 Star Energy efficient fans', points: 1 },
+        { label: '3 Star Energy efficient fans', points: 2 },
         { label: 'Inverter based Refrigerator', points: 1 },
-        { label: '3 Star Inverter Air conditioner', points: 1 },
-        { label: '5 Star Inverter Air conditioner', points: 2 },
       ],
       Existing: [
         { label: 'LED lights', points: 2 },
@@ -254,6 +252,7 @@ export const criteria: Criterion[] = [
         { label: 'Inverter based Refrigerator', points: 1 },
         { label: '3 Star Inverter Air conditioner', points: 1 },
         { label: '5 Star Inverter Air conditioner', points: 2 },
+        { label: 'Any other energy efficient appliances', points: 1 },
       ]
     }
   },
@@ -422,7 +421,7 @@ export const criteria: Criterion[] = [
   {
     id: 'green-housekeeping-chemicals',
     name: 'Green House Keeping Chemicals',
-    applicability: { New: true, Existing: false },
+    applicability: { New: false, Existing: true },
     type: 'Credit',
     requirements: 'Procure the green certified/organic house keeping chemicals.',
     documents: 'Photographs and Purchase invoices of housekeeping chemicals',
@@ -454,3 +453,5 @@ export const certificationLevels: CertificationLevel[] = [
   { level: 'Silver', minScore: { New: 50, Existing: 45 }, color: 'text-gray-500' },
   { level: 'Gold', minScore: { New: 65, Existing: 60 }, color: 'text-yellow-500' },
 ];
+
+    

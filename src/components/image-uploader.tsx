@@ -1,14 +1,16 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { ImagePlus, Trash2, UploadCloud, Camera, X } from 'lucide-react';
+import { UploadCloud, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import type { UploadedFile } from '@/lib/types';
 import { CameraCapture } from './camera-capture';
 import { ScrollArea } from './ui/scroll-area';
+import { Textarea } from './ui/textarea';
 
 interface ImageUploaderProps {
   criterionId: string;
@@ -32,7 +34,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     const newFilesPromises = acceptedFiles.map(async file => {
       const preview = URL.createObjectURL(file);
       const dataURL = await fileToDataURL(file);
-      return { file, preview, dataURL };
+      return { file, preview, dataURL, description: '' };
     });
     const newFiles = await Promise.all(newFilesPromises);
     const updatedFiles = [...uploadedFiles, ...newFiles];
@@ -57,6 +59,13 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     onFileChange(criterionId, updatedFiles.length > 0 ? updatedFiles : null);
   };
   
+  const handleDescriptionChange = (index: number, description: string) => {
+    const updatedFiles = [...uploadedFiles];
+    updatedFiles[index].description = description;
+    setUploadedFiles(updatedFiles);
+    onFileChange(criterionId, updatedFiles);
+  };
+
   useEffect(() => {
     return () => {
       uploadedFiles.forEach(file => URL.revokeObjectURL(file.preview));
@@ -75,7 +84,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     const file = new File([blob], `capture-${criterionId}-${Date.now()}.jpg`, { type: mimeString });
 
     const preview = URL.createObjectURL(file);
-    const newFile = { file, preview, dataURL };
+    const newFile: UploadedFile = { file, preview, dataURL, description: '' };
     const updatedFiles = [...uploadedFiles, newFile];
     setUploadedFiles(updatedFiles);
     onFileChange(criterionId, updatedFiles);
@@ -84,42 +93,51 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
 
   return (
     <>
-      <div className="w-full h-48 flex flex-col">
-        {uploadedFiles.length > 0 ? (
-          <ScrollArea className="flex-1 h-32 mb-2">
-            <div className="grid grid-cols-2 gap-2 pr-4">
+      <div className="w-full h-auto flex flex-col">
+        {uploadedFiles.length > 0 && (
+          <ScrollArea className="flex-1 max-h-96 mb-2">
+            <div className="space-y-4 pr-4">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="relative w-full aspect-square group">
-                  <Image
-                    src={file.preview}
-                    alt={`Preview ${index + 1}`}
-                    fill
-                    className="object-cover rounded-md"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-md">
-                    <Button variant="destructive" size="icon" className="h-7 w-7" onClick={(e) => removeFile(e, index)}>
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remove image</span>
-                    </Button>
-                  </div>
+                <div key={index} className="space-y-2">
+                   <div className="relative w-full aspect-video group">
+                      <Image
+                        src={file.preview}
+                        alt={`Preview ${index + 1}`}
+                        fill
+                        className="object-cover rounded-md"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-md">
+                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={(e) => removeFile(e, index)}>
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Remove image</span>
+                        </Button>
+                      </div>
+                    </div>
+                    <Textarea
+                        placeholder="Add a description for this image..."
+                        value={file.description}
+                        onChange={(e) => handleDescriptionChange(index, e.target.value)}
+                        className="text-sm"
+                        rows={2}
+                      />
                 </div>
               ))}
             </div>
           </ScrollArea>
-        ) : null}
+        )}
 
         <div
           {...getRootProps()}
           className={cn(
             'flex-grow w-full border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center p-2 cursor-pointer transition-colors',
             isDragActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
-            uploadedFiles.length > 0 ? "min-h-[60px] h-auto" : "h-full"
+            uploadedFiles.length > 0 ? "min-h-[60px] h-auto" : "min-h-48 h-full"
           )}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-1 text-muted-foreground text-xs">
             <UploadCloud className="w-6 h-6" />
-            <span>{isDragActive ? 'Drop here' : 'Drag or click'}</span>
+            <span>{isDragActive ? 'Drop here' : 'Drag or click to upload'}</span>
           </div>
           <span className="text-xs text-muted-foreground my-1">or</span>
           <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs" onClick={(e) => { e.stopPropagation(); setIsCameraOpen(true)}}>
@@ -135,3 +153,5 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     </>
   );
 };
+
+    
