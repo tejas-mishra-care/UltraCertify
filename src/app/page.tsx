@@ -496,7 +496,7 @@ const UltraCertifyPage: FC = () => {
 
   return (
     <>
-      <main id="main-content" className="min-h-screen bg-secondary/50 p-4 sm:p-6 lg:p-8">
+      <main id="main-content" className="min-h-screen bg-secondary/50 p-2 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
              <div className="flex items-center gap-4">
@@ -516,7 +516,7 @@ const UltraCertifyPage: FC = () => {
                   <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[1200px] pr-4">
+                  <ScrollArea className="h-[80vh] pr-4">
                     <div className="space-y-4">
                       {visibleCriteria.map((criterion, index) => {
                         const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
@@ -868,3 +868,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
