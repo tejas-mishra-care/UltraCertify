@@ -770,7 +770,7 @@ const UltraCertifyPage: FC = () => {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-accent">
             <CardHeader>
                 <CardTitle>Actions</CardTitle>
             </CardHeader>
@@ -788,3 +788,4 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+    
