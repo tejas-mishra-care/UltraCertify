@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Mail, User as UserIcon } from 'lucide-react';
+import { Mail, User as UserIcon, Phone } from 'lucide-react';
 
 const ProfilePage = () => {
   const { user, loading } = useAuth();
@@ -61,6 +61,14 @@ const ProfilePage = () => {
                 <Input id="displayName" type="text" placeholder="Enter your name" defaultValue={user.displayName || ''} className="pl-9" />
             </div>
             <p className="text-sm text-muted-foreground">This is the name that will be displayed on your projects.</p>
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+             <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="phoneNumber" type="tel" placeholder="Enter your phone number" defaultValue={user.phoneNumber || ''} className="pl-9" />
+            </div>
+            <p className="text-sm text-muted-foreground">Your contact number for project-related communication.</p>
           </div>
           <Button disabled>
             Save Changes
