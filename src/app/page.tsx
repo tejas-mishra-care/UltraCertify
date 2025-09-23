@@ -3,7 +3,7 @@
 
 import type { FC } from "react";
 import React, { useState, useCallback, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import jsPDF from 'jspdf';
@@ -23,6 +23,9 @@ import {
   Mail,
   Phone,
   Bike,
+  Star,
+  Home,
+  ChevronRight
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -55,12 +58,14 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import type { UploadedFile, Criterion, CriterionOption, BuildingType } from "@/lib/types";
-import { criteria, certificationLevels } from "@/lib/certification-data";
+import type { UploadedFile, Criterion, CriterionOption, BuildingType, CertificationStandard } from "@/lib/types";
+import { certificationData } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
 
 
 const projectSchema = z.object({
+  certificationStandard: z.enum(["NEST", "NEST_PLUS"]),
+  buildingType: z.enum(["New", "Existing"]),
   registrationNumber: z.string().min(1, "Registration number is required"),
   ownerName: z.string().min(1, "Owner name is required"),
   mobileNumber: z.string().min(1, "Mobile number is required"),
@@ -74,17 +79,19 @@ const projectSchema = z.object({
   totalBuiltUpArea: z.coerce.number().min(1, "Total built-up area must be greater than 0"),
   landscapeArea: z.coerce.number().min(0, "Landscape area cannot be negative"),
   twoWheelerParking: z.coerce.number().int().min(0, "Number cannot be negative"),
-  buildingType: z.enum(["New", "Existing"]),
 });
+
+type FormValues = z.infer<typeof projectSchema>;
 
 const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
+  const [step, setStep] = useState(1);
 
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof projectSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(projectSchema),
     defaultValues: {
       registrationNumber: "",
@@ -100,12 +107,34 @@ const UltraCertifyPage: FC = () => {
       totalBuiltUpArea: 1,
       landscapeArea: 0,
       twoWheelerParking: 0,
-      buildingType: "New",
     },
     mode: 'onChange'
   });
 
+  const certificationStandard = form.watch("certificationStandard");
   const buildingType = form.watch("buildingType");
+
+  const handleNextStep = () => {
+    form.trigger(["certificationStandard", "buildingType"]).then(isValid => {
+      if (isValid) {
+        setStep(2);
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Selection Required",
+            description: "Please select both a certification standard and a building type to continue.",
+        });
+      }
+    });
+  };
+
+  const selectedStandardData = useMemo(() => {
+    if (certificationStandard && buildingType) {
+      return certificationData[certificationStandard][buildingType];
+    }
+    return null;
+  }, [certificationStandard, buildingType]);
+
 
   const handleFileChange = useCallback((criterionId: string, files: UploadedFile[] | null) => {
     setUploadedFiles((prev) => {
@@ -149,14 +178,16 @@ const UltraCertifyPage: FC = () => {
 
   const getCriterionOptions = useCallback((criterion: Criterion): CriterionOption[] | undefined => {
     if (!criterion.options) return undefined;
-    return Array.isArray(criterion.options) ? criterion.options : criterion.options[buildingType];
+    if (Array.isArray(criterion.options)) return criterion.options;
+    return buildingType ? criterion.options[buildingType] : undefined;
   }, [buildingType]);
 
   const getCriterionScore = useCallback((criterion: Criterion) => {
-    if (criterion.type !== 'Credit') return 0;
+    if (criterion.type !== 'Credit' || !buildingType) return 0;
 
     const selection = selectedOptions[criterion.id];
-    const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+    const pointsConfig = criterion.points;
+    const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType as BuildingType] || 0;
     const options = getCriterionOptions(criterion);
 
     if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
@@ -179,34 +210,27 @@ const UltraCertifyPage: FC = () => {
     return 0;
   }, [selectedOptions, getCriterionOptions, buildingType]);
 
-  const visibleCriteria = useMemo(() => {
-    return criteria.filter(c => c.applicability[buildingType as BuildingType]);
-  }, [buildingType]);
-
   const { currentScore, maxScore, progress, certificationLevel } = useMemo(() => {
+     if (!selectedStandardData) {
+      return { currentScore: 0, maxScore: 0, progress: 0, certificationLevel: { level: 'Uncertified', color: 'text-gray-500' } };
+    }
+
     let score = 0;
-    visibleCriteria.forEach(criterion => {
+    selectedStandardData.criteria.forEach(criterion => {
       if (criterion.type === 'Credit') {
         score += getCriterionScore(criterion);
       }
     });
 
-    const max = visibleCriteria.reduce((acc, c) => {
-      if (c.type === 'Credit') {
-        const points = typeof c.points === 'number' ? c.points : c.points[buildingType as BuildingType];
-        return acc + (points || 0);
-      }
-      return acc;
-    }, 0);
-
+    const max = selectedStandardData.maxScore;
     const prog = max > 0 ? (score / max) * 100 : 0;
 
-    const level = [...certificationLevels]
+    const level = [...selectedStandardData.levels]
       .reverse()
-      .find((l) => score >= l.minScore[buildingType as BuildingType]) || { level: 'Uncertified', color: 'text-gray-500' };
+      .find((l) => score >= l.minScore) || { level: 'Uncertified', color: 'text-gray-500' };
 
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
-  }, [visibleCriteria, getCriterionScore, buildingType]);
+  }, [selectedStandardData, getCriterionScore]);
 
   const getBase64Image = (img: HTMLImageElement): string => {
     const canvas = document.createElement("canvas");
@@ -223,6 +247,10 @@ const UltraCertifyPage: FC = () => {
 
   const handleGeneratePDF = async () => {
     const projectDataForPdf = form.getValues();
+    if (!selectedStandardData) {
+        toast({ variant: "destructive", title: "Cannot generate PDF", description: "Standard data is not loaded." });
+        return;
+    }
     setIsGeneratingPDF(true);
     toast({
       title: "Generating Report...",
@@ -265,7 +293,8 @@ const UltraCertifyPage: FC = () => {
       doc.text('UltraCertify Report', pageWidth / 2, 15, { align: 'center' });
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text("IGBC's NEST PLUS Ver 1.0 - Green Building Certification Summary", pageWidth / 2, 22, { align: 'center' });
+      const reportTitle = `IGBC's ${certificationStandard?.replace('_', ' ')} - Green Building Certification Summary`;
+      doc.text(reportTitle, pageWidth / 2, 22, { align: 'center' });
       doc.setLineWidth(0.5);
       doc.line(margin, 28, pageWidth - margin, 28);
 
@@ -321,7 +350,7 @@ const UltraCertifyPage: FC = () => {
 
       addFooter();
 
-      for (const criterion of visibleCriteria) {
+      for (const criterion of selectedStandardData.criteria) {
         const selection = selectedOptions[criterion.id];
         const files = uploadedFiles[criterion.id] || [];
 
@@ -359,9 +388,10 @@ const UltraCertifyPage: FC = () => {
         bottomOfText = addDetail('Requirements:', criterion.requirements, bottomOfText);
 
         let statusText = "Not Attempted";
-        if (criterion.type === 'Credit') {
+        if (criterion.type === 'Credit' && buildingType) {
           const criterionScore = getCriterionScore(criterion);
-          const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+          const pointsConfig = criterion.points;
+          const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType];
           bottomOfText = addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`, bottomOfText);
 
           if (Array.isArray(selection) && selection.length > 0) {
@@ -442,7 +472,7 @@ const UltraCertifyPage: FC = () => {
         addFooter();
       }
 
-      doc.save('UltraCertify-Report.pdf');
+      doc.save(`UltraCertify-${certificationStandard?.replace('_','-')}-Report.pdf`);
 
     } catch (error) {
       console.error("Failed to generate PDF:", error);
@@ -456,19 +486,51 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
-  return (
-    <div className="space-y-8">
-      <Card>
-          <CardHeader>
-            <CardTitle>Project Details</CardTitle>
-            <CardDescription>Fill in the information for your project. This information will be used in the final report.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormField control={form.control} name="buildingType" render={({ field }) => (
+
+  const renderStep1 = () => (
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Start Your Certification</CardTitle>
+          <CardDescription>First, select your certification standard and building type.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+           <FormField
+              control={form.control}
+              name="certificationStandard"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>1. Certification Standard</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a standard..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="NEST_PLUS">
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-500" />
+                          <span>NEST PLUS</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="NEST">
+                        <div className="flex items-center gap-2">
+                           <Home className="h-4 w-4 text-green-500" />
+                           <span>NEST</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+                control={form.control}
+                name="buildingType"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Building Type</FormLabel>
+                    <FormLabel>2. Building Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -476,14 +538,30 @@ const UltraCertifyPage: FC = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Existing">Existing</SelectItem>
+                        <SelectItem value="New">New Building</SelectItem>
+                        <SelectItem value="Existing">Existing Building</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
-                />
+              />
+              <Button onClick={handleNextStep} className="w-full">
+                Continue <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+        </CardContent>
+      </Card>
+  );
+
+  const renderStep2 = () => (
+    <>
+      <Card>
+          <CardHeader>
+            <CardTitle>Project Details</CardTitle>
+            <CardDescription>Fill in the information for your project. This information will be used in the final report.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <FormField control={form.control} name="registrationNumber" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Project Registration Number</FormLabel>
@@ -640,8 +718,7 @@ const UltraCertifyPage: FC = () => {
                     <FormMessage />
                   </FormItem>
                 )} />
-              </form>
-            </Form>
+              </div>
           </CardContent>
         </Card>
 
@@ -650,15 +727,16 @@ const UltraCertifyPage: FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Certification Criteria</CardTitle>
-              <CardDescription>Select the credits you have achieved and upload supporting documents.</CardDescription>
+              <CardDescription>Select the credits you have achieved and upload supporting documents for the <span className="font-bold">{certificationStandard?.replace('_', ' ')} - {buildingType} Building</span> standard.</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
-                {visibleCriteria.map((criterion) => {
+                {selectedStandardData?.criteria.map((criterion) => {
                   const isAchieved = (uploadedFiles[criterion.id]?.length || 0) > 0;
                   const options = getCriterionOptions(criterion);
                   const currentPoints = getCriterionScore(criterion);
-                  const maxPoints = typeof criterion.points === 'number' ? criterion.points : criterion.points[buildingType as BuildingType];
+                  const pointsConfig = criterion.points;
+                  const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : (buildingType ? pointsConfig[buildingType as BuildingType] : 0);
 
                   return (
                     <AccordionItem value={criterion.id} key={criterion.id}>
@@ -761,10 +839,10 @@ const UltraCertifyPage: FC = () => {
               </div>
               <Separator />
               <div className="space-y-2">
-                {certificationLevels.map(level => (
+                {selectedStandardData?.levels.map(level => (
                   <div key={level.level} className="flex justify-between items-center text-sm">
                     <span className={`${level.color}`}>{level.level}</span>
-                    <span className="font-medium text-muted-foreground">{level.minScore[buildingType as BuildingType]}+ Points</span>
+                    <span className="font-medium text-muted-foreground">{level.minScore}+ Points</span>
                   </div>
                 ))}
               </div>
@@ -783,9 +861,20 @@ const UltraCertifyPage: FC = () => {
           </Card>
         </aside>
       </div>
+    </>
+  );
+
+  return (
+    <div className="space-y-8">
+     <FormProvider {...form}>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(() => {})}>
+                {step === 1 ? renderStep1() : renderStep2()}
+            </form>
+        </Form>
+      </FormProvider>
     </div>
   );
 };
 
 export default UltraCertifyPage;
-    

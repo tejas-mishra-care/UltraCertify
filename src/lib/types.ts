@@ -1,5 +1,6 @@
 
 export type BuildingType = 'New' | 'Existing';
+export type CertificationStandard = 'NEST' | 'NEST_PLUS';
 
 export type CriterionOption = {
   label: string;
@@ -9,7 +10,8 @@ export type CriterionOption = {
 export type Criterion = {
   id: string;
   name: string;
-  applicability: Record<BuildingType, boolean>;
+  // This can be removed if applicability is handled by the data structure
+  // applicability: Record<BuildingType, boolean>; 
   type: 'Mandatory' | 'Credit';
   requirements: string;
   documents: string;
@@ -20,8 +22,20 @@ export type Criterion = {
 
 export type CertificationLevel = {
   level: 'Certified' | 'Silver' | 'Gold' | 'Uncertified';
-  minScore: Record<BuildingType, number>;
+  minScore: number;
   color: string;
+};
+
+export type StandardData = {
+  criteria: Criterion[];
+  levels: CertificationLevel[];
+  maxScore: number;
+};
+
+export type CertificationData = {
+  [key in CertificationStandard]: {
+    [key in BuildingType]: StandardData;
+  };
 };
 
 export type ProjectData = {
@@ -39,6 +53,7 @@ export type ProjectData = {
   projectType: string;
   twoWheelerParking: number;
   buildingType: BuildingType;
+  certificationStandard: CertificationStandard;
 };
 
 export type UploadedFile = {
