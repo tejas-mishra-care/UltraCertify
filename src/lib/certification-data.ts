@@ -583,6 +583,8 @@ const filterAndGetMaxScore = (criteria: Criterion[], buildingType: 'New' | 'Exis
     const filtered = criteria.filter(c => {
         const points = c.points;
         if (typeof points === 'number') return true;
+        // Keep the criterion if it's mandatory OR if it has points for the building type
+        if (c.type === 'Mandatory') return true;
         return (points[buildingType] || 0) > 0;
     });
 
@@ -609,18 +611,20 @@ export const certificationData: CertificationData = {
             criteria: nestPlusNewCriteria,
             maxScore: nestPlusNewMaxScore,
             levels: [
-                { level: 'Certified', minScore: 40, color: 'text-blue-500' },
+                { level: 'Certified', minScore: 40, color: 'text-green-500' },
                 { level: 'Silver', minScore: 50, color: 'text-gray-500' },
                 { level: 'Gold', minScore: 65, color: 'text-yellow-500' },
+                { level: 'Platinum', minScore: 75, color: 'text-blue-400' },
             ]
         },
         Existing: {
             criteria: nestPlusExistingCriteria,
             maxScore: nestPlusExistingMaxScore,
             levels: [
-                { level: 'Certified', minScore: 35, color: 'text-blue-500' },
+                { level: 'Certified', minScore: 35, color: 'text-green-500' },
                 { level: 'Silver', minScore: 45, color: 'text-gray-500' },
                 { level: 'Gold', minScore: 60, color: 'text-yellow-500' },
+                { level: 'Platinum', minScore: 70, color: 'text-blue-400' },
             ]
         }
     },
@@ -629,18 +633,20 @@ export const certificationData: CertificationData = {
             criteria: nestNewCriteria,
             maxScore: nestNewMaxScore,
             levels: [
-                { level: 'Certified', minScore: 22, color: 'text-blue-500' },
-                { level: 'Silver', minScore: 28, color: 'text-gray-500' },
-                { level: 'Gold', minScore: 36, color: 'text-yellow-500' },
+                { level: 'Certified', minScore: 20, color: 'text-green-500' },
+                { level: 'Silver', minScore: 35, color: 'text-gray-500' },
+                { level: 'Gold', minScore: 40, color: 'text-yellow-500' },
+                { level: 'Platinum', minScore: 45, color: 'text-blue-400' },
             ]
         },
         Existing: {
             criteria: nestExistingCriteria,
             maxScore: nestExistingMaxScore,
             levels: [
-                { level: 'Certified', minScore: 20, color: 'text-blue-500' },
-                { level: 'Silver', minScore: 25, color: 'text-gray-500' },
-                { level: 'Gold', minScore: 32, color: 'text-yellow-500' },
+                { level: 'Certified', minScore: 20, color: 'text-green-500' },
+                { level: 'Silver', minScore: 30, color: 'text-gray-500' },
+                { level: 'Gold', minScore: 35, color: 'text-yellow-500' },
+                { level: 'Platinum', minScore: 40, color: 'text-blue-400' },
             ]
         }
     }

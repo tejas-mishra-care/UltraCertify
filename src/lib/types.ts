@@ -10,8 +10,6 @@ export type CriterionOption = {
 export type Criterion = {
   id: string;
   name: string;
-  // This can be removed if applicability is handled by the data structure
-  // applicability: Record<BuildingType, boolean>; 
   type: 'Mandatory' | 'Credit';
   requirements: string;
   documents: string;
@@ -21,7 +19,7 @@ export type Criterion = {
 };
 
 export type CertificationLevel = {
-  level: 'Certified' | 'Silver' | 'Gold' | 'Uncertified';
+  level: 'Certified' | 'Silver' | 'Gold' | 'Platinum' | 'Uncertified';
   minScore: number;
   color: string;
 };
