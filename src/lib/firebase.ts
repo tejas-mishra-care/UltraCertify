@@ -7,7 +7,7 @@ import {
   signOut,
   Auth,
   setPersistence,
-  browserSessionPersistence,
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
@@ -32,7 +32,7 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
 // Set authentication persistence
-setPersistence(auth, browserSessionPersistence);
+setPersistence(auth, browserLocalPersistence);
 
 
 // Auth functions
