@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { FC } from "react";
@@ -452,12 +451,26 @@ const UltraCertifyPage: FC = () => {
 
               doc.addImage(file.dataURL, imageType, xPos, imageY, finalWidth, finalHeight);
               
-              const descY = imageY + finalHeight + 5;
+              let textY = imageY + finalHeight + 5;
               doc.setFontSize(8);
-              doc.setFont('helvetica', 'italic');
-              const descLines = doc.splitTextToSize(file.description || 'No description provided.', finalWidth);
-              doc.text(descLines, xPos, descY);
-              imageY = descY + descLines.length * 4 + 5;
+              
+              if (file.description) {
+                doc.setFont('helvetica', 'italic');
+                const descLines = doc.splitTextToSize(file.description, finalWidth);
+                doc.text(descLines, xPos, textY);
+                textY += descLines.length * 4;
+              }
+
+              if (file.latitude && file.longitude) {
+                doc.setFont('helvetica', 'normal');
+                const locationText = `Location: ${file.latitude.toFixed(5)}, ${file.longitude.toFixed(5)}`;
+                const locationLines = doc.splitTextToSize(locationText, finalWidth);
+                doc.text(locationLines, xPos, textY);
+                textY += locationLines.length * 4;
+              }
+
+              imageY = textY + 5;
+
 
             } catch (e) {
               console.error("Error adding image to PDF:", e);
