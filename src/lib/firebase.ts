@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   Auth,
+  setPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
@@ -28,6 +30,10 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
+
+// Set authentication persistence
+setPersistence(auth, browserSessionPersistence);
+
 
 // Auth functions
 const signup = (email: string, password: string) => {
