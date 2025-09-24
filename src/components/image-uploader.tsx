@@ -3,7 +3,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { UploadCloud, Camera, X } from 'lucide-react';
+import { UploadCloud, Camera, X, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -72,7 +72,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     };
   }, [uploadedFiles]);
 
-  const handleCapture = (dataURL: string) => {
+  const handleCapture = (dataURL: string, location: { latitude: number; longitude: number } | null) => {
     const byteString = atob(dataURL.split(',')[1]);
     const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
     const ab = new ArrayBuffer(byteString.length);
@@ -84,7 +84,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     const file = new File([blob], `capture-${criterionId}-${Date.now()}.jpg`, { type: mimeString });
 
     const preview = URL.createObjectURL(file);
-    const newFile: UploadedFile = { file, preview, dataURL, description: '' };
+    const newFile: UploadedFile = { 
+        file, 
+        preview, 
+        dataURL, 
+        description: '',
+        latitude: location?.latitude,
+        longitude: location?.longitude
+    };
     const updatedFiles = [...uploadedFiles, newFile];
     setUploadedFiles(updatedFiles);
     onFileChange(criterionId, updatedFiles);
@@ -120,6 +127,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
                         className="text-sm"
                         rows={2}
                       />
+                    {file.latitude && file.longitude && (
+                       <div className="flex items-center text-xs text-muted-foreground gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>
+                            {file.latitude.toFixed(4)}, {file.longitude.toFixed(4)}
+                          </span>
+                       </div>
+                    )}
                 </div>
               ))}
             </div>

@@ -59,4 +59,6 @@ export type UploadedFile = {
   preview: string;
   dataURL: string;
   description: string;
+  latitude?: number;
+  longitude?: number;
 };
