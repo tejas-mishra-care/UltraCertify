@@ -21,13 +21,13 @@ import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z.string().min(1, { message: 'Password is required.' }),
 });
 
 const signupSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z.string().min(6, { message: 'Password must be at least 6 characters long.' }),
 });
 
 type LoginValues = z.infer<typeof loginSchema>;
@@ -55,23 +55,32 @@ const Login = () => {
   });
   
   const handleAuthError = (error: unknown) => {
-    let description = "An unexpected error occurred. Please try again.";
+    let description = "An unexpected error occurred. Please try again later.";
     if (error instanceof FirebaseError) {
         switch (error.code) {
             case 'auth/user-not-found':
             case 'auth/wrong-password':
-                description = "Invalid email or password. Please try again.";
+            case 'auth/invalid-credential':
+                description = "The email or password you entered is incorrect. Please check your credentials and try again.";
                 break;
             case 'auth/email-already-in-use':
-                description = "This email is already registered. Please log in.";
+                description = "An account with this email address already exists. Please log in or use a different email.";
                 break;
             case 'auth/weak-password':
-                description = "The password is too weak. Please choose a stronger password.";
+                description = "The password is too weak. Please choose a password that is at least 6 characters long.";
                 break;
+            case 'auth/invalid-email':
+                description = "The email address is not valid. Please enter a valid email.";
+                break;
+            case 'auth/too-many-requests':
+                 description = "Access to this account has been temporarily disabled due to many failed login attempts. You can reset your password or try again later.";
+                 break;
             default:
-                 description = error.message;
+                 console.error("Firebase Auth Error:", error.code, error.message);
                  break;
         }
+    } else {
+        console.error("Non-Firebase Error:", error);
     }
      toast({
         variant: "destructive",
