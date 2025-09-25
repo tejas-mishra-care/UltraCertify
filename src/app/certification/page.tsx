@@ -63,6 +63,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { UploadedFile, Criterion, CriterionOption, BuildingType, CertificationStandard } from "@/lib/types";
 import { certificationData } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
+import { Textarea } from "@/components/ui/textarea";
 
 
 const projectSchema = z.object({
@@ -89,6 +90,7 @@ const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
+  const [otherAutomationDetails, setOtherAutomationDetails] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1);
 
   const { toast } = useToast();
@@ -186,6 +188,13 @@ const UltraCertifyPage: FC = () => {
         [criterionId]: newSelection
       };
     });
+  }, []);
+  
+  const handleOtherAutomationChange = useCallback((criterionId: string, value: string) => {
+    setOtherAutomationDetails(prev => ({
+      ...prev,
+      [criterionId]: value,
+    }));
   }, []);
 
   const getCriterionOptions = useCallback((criterion: Criterion): CriterionOption[] | undefined => {
@@ -415,7 +424,12 @@ const UltraCertifyPage: FC = () => {
           bottomOfText = addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`, bottomOfText);
 
           if (Array.isArray(selection) && selection.length > 0) {
-            statusText = `Selected: ${selection.join(', ')}`;
+            let selections = selection.filter(s => s !== 'Others');
+            let status = selections.length > 0 ? `Selected: ${selections.join(', ')}` : '';
+            if (selection.includes('Others') && otherAutomationDetails[criterion.id]) {
+                status += (status ? '; ' : 'Selected: ') + `Others - ${otherAutomationDetails[criterion.id]}`;
+            }
+            statusText = status || "Achieved";
           } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
             const options = getCriterionOptions(criterion);
             const selectedOption = options?.find(opt => opt.label === selection);
@@ -778,6 +792,7 @@ const UltraCertifyPage: FC = () => {
                   const currentPoints = getCriterionScore(criterion);
                   const pointsConfig = criterion.points;
                   const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : (buildingType ? pointsConfig[buildingType as BuildingType] : 0);
+                  const selection = selectedOptions[criterion.id] as string[] || [];
 
                   return (
                     <AccordionItem value={criterion.id} key={criterion.id}>
@@ -844,6 +859,18 @@ const UltraCertifyPage: FC = () => {
                                         <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
                                       </div>
                                     ))}
+                                    {selection.includes('Others') && (
+                                        <div className="pt-2 pl-6">
+                                            <Label htmlFor={`${criterion.id}-others-details`}>Please specify other automation:</Label>
+                                            <Textarea
+                                                id={`${criterion.id}-others-details`}
+                                                placeholder="e.g., Smart blinds, voice assistant integration"
+                                                value={otherAutomationDetails[criterion.id] || ''}
+                                                onChange={(e) => handleOtherAutomationChange(criterion.id, e.target.value)}
+                                                className="mt-1"
+                                            />
+                                        </div>
+                                    )}
                                   </div>
                                 )}
                               </>
