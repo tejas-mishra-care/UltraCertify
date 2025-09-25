@@ -588,7 +588,7 @@ const UltraCertifyPage: FC = () => {
                 criterion.name,
                 criterion.type,
                 pointsText,
-                status
+                getCriterionRequirements(criterion)
             ];
         })
         .filter(row => row !== null);
@@ -596,7 +596,7 @@ const UltraCertifyPage: FC = () => {
 
       if(tableData.length > 0) {
         doc.autoTable({
-            head: [['Criterion', 'Type', 'Points Awarded', 'Status / Selection']],
+            head: [['Criterion', 'Type', 'Points Awarded', 'Requirements Met']],
             body: tableData,
             startY: summaryY,
             headStyles: {
@@ -606,7 +606,7 @@ const UltraCertifyPage: FC = () => {
             },
             styles: {
                 cellPadding: 3,
-                fontSize: 10,
+                fontSize: 9,
                 valign: 'middle'
             },
             columnStyles: {
