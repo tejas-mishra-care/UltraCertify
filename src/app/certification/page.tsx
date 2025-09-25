@@ -224,6 +224,14 @@ const UltraCertifyPage: FC = () => {
     const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType as BuildingType] || 0;
     const options = getCriterionOptions(criterion);
 
+    // Custom logic for Basic Amenities
+    if (criterion.id === 'np-basic-amenities' && Array.isArray(selection)) {
+        const selectedCount = selection.length;
+        if (selectedCount >= 5) return 2;
+        if (selectedCount >= 3) return 1;
+        return 0;
+    }
+
     if (criterion.selectionType === 'multiple' && Array.isArray(selection) && options) {
       const calculatedPoints = selection.reduce((acc, sel) => {
         const option = options?.find(opt => opt.label === sel);
@@ -945,7 +953,7 @@ const UltraCertifyPage: FC = () => {
                                           checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
                                           onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
                                         />
-                                        <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} ({opt.points} pts)</Label>
+                                        <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} {opt.points > 0 ? `(${opt.points} pts)` : ''}</Label>
                                       </div>
                                     ))}
                                     {selection.includes('Others') && (
