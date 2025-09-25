@@ -461,7 +461,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-water-saving-fixtures',
         name: 'Water Saving Fixtures',
         type: 'Credit',
-        requirements: 'Provide efficient water fixtures: dual flush cristern for commode - 2 points tap with aerators - 1 point showers with aerators - 1 points health faucet with aerators - 1 point.',
+        requirements: 'Provide efficient water fixtures: dual flush cristern for commode - 2 points, tap with aerators - 1 point, showers with aerators - 1 point, health faucet with aerators - 1 point.',
         documents: 'Photographs of fixtures.',
         points: 5,
         selectionType: 'multiple',
@@ -530,7 +530,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-green-procurement',
         name: 'Green Procurement - Ecolabelled',
         type: 'Credit',
-        requirements: 'Use Green certified materials. Select from 1 to 5 credits.',
+        requirements: 'Use Green certified materials.',
         documents: 'Photos, cutsheets, and invoices.',
         points: { New: 5, Existing: 2 },
         options: {
@@ -577,7 +577,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-exhaust-system',
         name: 'Exhaust System',
         type: 'Credit',
-        requirements: 'Provide exhaust systems in kitchen and bathrooms. Select 1 or 2 credits.',
+        requirements: 'Provide exhaust systems in kitchen and bathrooms.',
         documents: 'Photographs of openings and fans.',
         points: 2,
         options: [
@@ -589,7 +589,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-innovation-exemplary',
         name: 'Innovation & Exemplary',
         type: 'Credit',
-        requirements: 'Achieve innovative and exemplary performance. Select 1, 2, or 3 credits.',
+        requirements: 'Achieve innovative and exemplary performance.',
         documents: 'Supporting proof documents.',
         points: { New: 3, Existing: 2 },
         options: {
