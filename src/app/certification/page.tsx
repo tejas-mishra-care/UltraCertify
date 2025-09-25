@@ -2,7 +2,7 @@
 "use client";
 
 import type { FC } from "react";
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -61,8 +61,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import type { UploadedFile, Criterion, CriterionOption, BuildingType, CertificationStandard } from "@/lib/types";
-import { certificationData } from "@/lib/certification-data";
+import type { UploadedFile, Criterion, CriterionOption, BuildingType, StandardData } from "@/lib/types";
 import { ImageUploader } from "@/components/image-uploader";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -97,6 +96,9 @@ const UltraCertifyPage: FC = () => {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string | string[]>>({});
   const [otherAutomationDetails, setOtherAutomationDetails] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [selectedStandardData, setSelectedStandardData] = useState<StandardData | null>(null);
+
 
   const { toast } = useToast();
   const { user, loading } = useAuth();
@@ -133,26 +135,34 @@ const UltraCertifyPage: FC = () => {
   const certificationStandard = form.watch("certificationStandard");
   const buildingType = form.watch("buildingType");
 
-  const handleNextStep = () => {
-    form.trigger(["certificationStandard", "buildingType"]).then(isValid => {
-      if (isValid) {
-        setStep(2);
-      } else {
-         toast({
-            variant: "destructive",
-            title: "Selection Required",
-            description: "Please select both a certification standard and a building type to continue.",
+  const handleNextStep = async () => {
+    const isValid = await form.trigger(["certificationStandard", "buildingType"]);
+    if (isValid) {
+      setIsLoadingData(true);
+      try {
+        const { certificationData } = await import('@/lib/certification-data');
+        if (certificationStandard && buildingType) {
+          setSelectedStandardData(certificationData[certificationStandard][buildingType]);
+          setStep(2);
+        }
+      } catch (error) {
+        console.error("Failed to load certification data", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not load the certification data. Please try again.",
         });
+      } finally {
+        setIsLoadingData(false);
       }
-    });
-  };
-
-  const selectedStandardData = useMemo(() => {
-    if (certificationStandard && buildingType) {
-      return certificationData[certificationStandard][buildingType];
+    } else {
+       toast({
+          variant: "destructive",
+          title: "Selection Required",
+          description: "Please select both a certification standard and a building type to continue.",
+      });
     }
-    return null;
-  }, [certificationStandard, buildingType]);
+  };
 
 
   const handleFileChange = useCallback((criterionId: string, files: UploadedFile[] | null) => {
@@ -698,8 +708,8 @@ const UltraCertifyPage: FC = () => {
                   </FormItem>
                 )}
               />
-              <Button onClick={handleNextStep} className="w-full">
-                Continue <ChevronRight className="ml-2 h-4 w-4" />
+              <Button onClick={handleNextStep} disabled={isLoadingData} className="w-full">
+                {isLoadingData ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <>Continue <ChevronRight className="ml-2 h-4 w-4" /></>}
               </Button>
         </CardContent>
       </Card>
@@ -1043,5 +1053,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    
