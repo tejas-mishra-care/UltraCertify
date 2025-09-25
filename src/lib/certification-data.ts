@@ -461,9 +461,16 @@ const nestCriteria: Criterion[] = [
         id: 'n-water-saving-fixtures',
         name: 'Water Saving Fixtures',
         type: 'Credit',
-        requirements: 'Provide any 3 efficient water fixtures (e.g., Dual flush, aerators).',
+        requirements: 'Provide efficient water fixtures: dual flush cristern for commode - 2 points tap with aerators - 1 point showers with aerators - 1 points health faucet with aerators - 1 point.',
         documents: 'Photographs of fixtures.',
         points: 5,
+        selectionType: 'multiple',
+        options: [
+            { label: 'Dual flush cistern', points: 2 },
+            { label: 'Tap with aerators', points: 1 },
+            { label: 'Showers with aerators', points: 1 },
+            { label: 'Health faucet with aerators', points: 1 },
+        ]
     },
     {
         id: 'n-water-metering-controllers',
@@ -523,9 +530,22 @@ const nestCriteria: Criterion[] = [
         id: 'n-green-procurement',
         name: 'Green Procurement - Ecolabelled',
         type: 'Credit',
-        requirements: 'Use Green certified materials.',
+        requirements: 'Use Green certified materials. Select from 1 to 5 credits.',
         documents: 'Photos, cutsheets, and invoices.',
         points: { New: 5, Existing: 2 },
+        options: {
+            New: [
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+                { label: '3 Credits', points: 3 },
+                { label: '4 Credits', points: 4 },
+                { label: '5 Credits', points: 5 },
+            ],
+            Existing: [
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+            ]
+        }
     },
     {
         id: 'n-daylighting',
@@ -557,17 +577,32 @@ const nestCriteria: Criterion[] = [
         id: 'n-exhaust-system',
         name: 'Exhaust System',
         type: 'Credit',
-        requirements: 'Provide exhaust systems in kitchen and bathrooms.',
+        requirements: 'Provide exhaust systems in kitchen and bathrooms. Select 1 or 2 credits.',
         documents: 'Photographs of openings and fans.',
         points: 2,
+        options: [
+            { label: '1 Credit', points: 1 },
+            { label: '2 Credits', points: 2 },
+        ]
     },
     {
         id: 'n-innovation-exemplary',
         name: 'Innovation & Exemplary',
         type: 'Credit',
-        requirements: 'Achieve innovative and exemplary performance.',
+        requirements: 'Achieve innovative and exemplary performance. Select 1, 2, or 3 credits.',
         documents: 'Supporting proof documents.',
         points: { New: 3, Existing: 2 },
+        options: {
+            New: [
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+                { label: '3 Credits', points: 3 },
+            ],
+            Existing: [
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+            ]
+        }
     },
     {
         id: 'n-igbc-ap',
