@@ -64,6 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { UploadedFile, Criterion, CriterionOption, BuildingType, StandardData } from "@/lib/types";
 import { ImageUploader } from "@/components/image-uploader";
 import { Textarea } from "@/components/ui/textarea";
+import dynamic from "next/dynamic";
 
 // Extend jsPDF with autoTable
 interface jsPDFWithAutoTable extends jsPDF {
@@ -436,6 +437,72 @@ const UltraCertifyPage: FC = () => {
 
       addFooter();
 
+      // --- Summary Table Page ---
+      doc.addPage();
+      pageCount++;
+      let summaryY = margin;
+
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Project Summary Table', pageWidth / 2, summaryY, { align: 'center' });
+      summaryY += 15;
+      
+      const tableData = selectedStandardData.criteria
+        .map(criterion => {
+            const status = getStatusText(criterion);
+            if (status === 'Not Attempted') return null;
+
+            let pointsText = '-';
+            if (criterion.type === 'Credit' && buildingType) {
+                const current = getCriterionScore(criterion);
+                const pointsConfig = criterion.points;
+                const max = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType];
+                pointsText = `${current} / ${max}`;
+            }
+
+            return [
+                criterion.name,
+                criterion.type,
+                pointsText,
+                getCriterionRequirements(criterion)
+            ];
+        })
+        .filter(row => row !== null);
+
+
+      if(tableData.length > 0) {
+        doc.autoTable({
+            head: [['Criterion', 'Type', 'Points Awarded', 'Requirements Met']],
+            body: tableData,
+            startY: summaryY,
+            headStyles: {
+                fillColor: [34, 41, 47], // A dark grey color for header
+                textColor: [255, 255, 255],
+                fontStyle: 'bold'
+            },
+            styles: {
+                cellPadding: 3,
+                fontSize: 9,
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 35 },
+                3: { cellWidth: 'auto' },
+            },
+            didDrawPage: () => {
+              addFooter();
+            }
+        });
+      } else {
+         doc.setFontSize(12);
+         doc.setFont('helvetica', 'normal');
+         doc.text("No criteria were attempted for this project.", margin, summaryY);
+         addFooter();
+      }
+
+      // --- Individual Criterion Pages ---
       for (const criterion of selectedStandardData.criteria) {
         const selection = selectedOptions[criterion.id];
         const files = uploadedFiles[criterion.id] || [];
@@ -559,71 +626,6 @@ const UltraCertifyPage: FC = () => {
           }
         }
         addFooter();
-      }
-
-       // --- Summary Table Page ---
-      doc.addPage();
-      pageCount++;
-      let summaryY = margin;
-
-      doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Project Summary Table', pageWidth / 2, summaryY, { align: 'center' });
-      summaryY += 15;
-      
-      const tableData = selectedStandardData.criteria
-        .map(criterion => {
-            const status = getStatusText(criterion);
-            if (status === 'Not Attempted') return null;
-
-            let pointsText = '-';
-            if (criterion.type === 'Credit' && buildingType) {
-                const current = getCriterionScore(criterion);
-                const pointsConfig = criterion.points;
-                const max = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType];
-                pointsText = `${current} / ${max}`;
-            }
-
-            return [
-                criterion.name,
-                criterion.type,
-                pointsText,
-                getCriterionRequirements(criterion)
-            ];
-        })
-        .filter(row => row !== null);
-
-
-      if(tableData.length > 0) {
-        doc.autoTable({
-            head: [['Criterion', 'Type', 'Points Awarded', 'Requirements Met']],
-            body: tableData,
-            startY: summaryY,
-            headStyles: {
-                fillColor: [34, 41, 47], // A dark grey color for header
-                textColor: [255, 255, 255],
-                fontStyle: 'bold'
-            },
-            styles: {
-                cellPadding: 3,
-                fontSize: 9,
-                valign: 'middle'
-            },
-            columnStyles: {
-                0: { cellWidth: 'auto' },
-                1: { cellWidth: 25 },
-                2: { cellWidth: 35 },
-                3: { cellWidth: 'auto' },
-            },
-            didDrawPage: () => {
-              addFooter();
-            }
-        });
-      } else {
-         doc.setFontSize(12);
-         doc.setFont('helvetica', 'normal');
-         doc.text("No criteria were attempted for this project.", margin, summaryY);
-         addFooter();
       }
 
 
@@ -1053,3 +1055,4 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+ 
