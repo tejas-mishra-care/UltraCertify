@@ -7,6 +7,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import {
   Building,
   Ruler,
@@ -65,6 +66,10 @@ import { certificationData } from "@/lib/certification-data";
 import { ImageUploader } from "@/components/image-uploader";
 import { Textarea } from "@/components/ui/textarea";
 
+// Extend jsPDF with autoTable
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 const projectSchema = z.object({
   certificationStandard: z.enum(["NEST", "NEST_PLUS"]),
@@ -274,6 +279,40 @@ const UltraCertifyPage: FC = () => {
     return '';
   };
 
+  const getStatusText = (criterion: Criterion): string => {
+    const selection = selectedOptions[criterion.id];
+    const files = uploadedFiles[criterion.id] || [];
+
+    if (criterion.type === 'Credit' && buildingType) {
+        const criterionScore = getCriterionScore(criterion);
+        if (criterionScore > 0 || (Array.isArray(selection) && selection.length > 0)) {
+            if (Array.isArray(selection) && selection.length > 0) {
+                let selections = selection.filter(s => s !== 'Others');
+                let status = selections.length > 0 ? `${selections.join(', ')}` : '';
+                if (selection.includes('Others') && otherAutomationDetails[criterion.id]) {
+                    status += (status ? '; ' : '') + `Others - ${otherAutomationDetails[criterion.id]}`;
+                }
+                return status || "Achieved";
+            } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
+                const options = getCriterionOptions(criterion);
+                const selectedOption = options?.find(opt => opt.label === selection);
+                return selectedOption ? `${selectedOption.label}` : "Achieved";
+            }
+        }
+    }
+    
+    if (files.length > 0) {
+        return "Evidence Provided";
+    }
+
+    if (criterion.type === 'Mandatory') {
+        return 'Not Attempted';
+    }
+
+    return 'Not Attempted';
+};
+
+
   const handleGeneratePDF = async () => {
     const projectDataForPdf = form.getValues();
     if (!selectedStandardData) {
@@ -287,7 +326,7 @@ const UltraCertifyPage: FC = () => {
     });
 
     try {
-      const doc = new jsPDF('l', 'mm', 'a4');
+      const doc = new jsPDF('l', 'mm', 'a4') as jsPDFWithAutoTable;
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 15;
@@ -327,12 +366,12 @@ const UltraCertifyPage: FC = () => {
       doc.setLineWidth(0.5);
       doc.line(margin, 28, pageWidth - margin, 28);
 
-      let yPos = 38;
-      doc.setFontSize(20);
+      let yPos = 40;
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
       doc.text('Project Details', margin, yPos);
       yPos += 12;
-      doc.setFontSize(14);
+      doc.setFontSize(16);
 
       const details = [
         { label: 'Registration Number', value: projectDataForPdf.registrationNumber },
@@ -358,7 +397,7 @@ const UltraCertifyPage: FC = () => {
       details.forEach((detail, index) => {
         const currentX = index % 2 === 0 ? col1X : col2X;
         if (index > 0 && index % 2 === 0) {
-          detailY += 10;
+          detailY += 12;
         }
         doc.setFont('helvetica', 'bold');
         doc.text(`${detail.label}:`, currentX, detailY);
@@ -366,15 +405,15 @@ const UltraCertifyPage: FC = () => {
         doc.text(detail.value || '-', currentX + 60, detailY);
       });
 
-      yPos = detailY + 22;
+      yPos = detailY + 24;
 
-      doc.setFontSize(20);
+      doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
       doc.text('Certification Summary', margin, yPos);
-      yPos += 12;
-      doc.setFontSize(16);
+      yPos += 14;
+      doc.setFontSize(18);
       doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
-      yPos += 12;
+      yPos += 14;
       doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
 
       addFooter();
@@ -416,29 +455,13 @@ const UltraCertifyPage: FC = () => {
         let bottomOfText = textY;
         bottomOfText = addDetail('Requirements:', getCriterionRequirements(criterion), bottomOfText);
 
-        let statusText = "Not Attempted";
+        const statusText = getStatusText(criterion);
+        
         if (criterion.type === 'Credit' && buildingType) {
           const criterionScore = getCriterionScore(criterion);
           const pointsConfig = criterion.points;
           const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType];
           bottomOfText = addDetail('Points Awarded:', `${criterionScore} / ${maxPoints}`, bottomOfText);
-
-          if (Array.isArray(selection) && selection.length > 0) {
-            let selections = selection.filter(s => s !== 'Others');
-            let status = selections.length > 0 ? `Selected: ${selections.join(', ')}` : '';
-            if (selection.includes('Others') && otherAutomationDetails[criterion.id]) {
-                status += (status ? '; ' : 'Selected: ') + `Others - ${otherAutomationDetails[criterion.id]}`;
-            }
-            statusText = status || "Achieved";
-          } else if (typeof selection === 'string' && selection !== 'false' && selection !== 'none') {
-            const options = getCriterionOptions(criterion);
-            const selectedOption = options?.find(opt => opt.label === selection);
-            statusText = selectedOption ? `Selected: ${selectedOption.label}` : "Achieved";
-          }
-        } else {
-          if (files.length > 0) {
-            statusText = "Evidence Provided";
-          }
         }
         bottomOfText = addDetail('Status:', statusText, bottomOfText);
         
@@ -519,6 +542,72 @@ const UltraCertifyPage: FC = () => {
         }
         addFooter();
       }
+
+       // --- Summary Table Page ---
+      doc.addPage();
+      pageCount++;
+      let summaryY = margin;
+
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Project Summary Table', pageWidth / 2, summaryY, { align: 'center' });
+      summaryY += 15;
+      
+      const tableData = selectedStandardData.criteria
+        .map(criterion => {
+            const status = getStatusText(criterion);
+            if (status === 'Not Attempted') return null;
+
+            let pointsText = '-';
+            if (criterion.type === 'Credit' && buildingType) {
+                const current = getCriterionScore(criterion);
+                const pointsConfig = criterion.points;
+                const max = typeof pointsConfig === 'number' ? pointsConfig : pointsConfig[buildingType];
+                pointsText = `${current} / ${max}`;
+            }
+
+            return [
+                criterion.name,
+                criterion.type,
+                pointsText,
+                status
+            ];
+        })
+        .filter(row => row !== null);
+
+
+      if(tableData.length > 0) {
+        doc.autoTable({
+            head: [['Criterion', 'Type', 'Points Awarded', 'Status / Selection']],
+            body: tableData,
+            startY: summaryY,
+            headStyles: {
+                fillColor: [34, 41, 47], // A dark grey color for header
+                textColor: [255, 255, 255],
+                fontStyle: 'bold'
+            },
+            styles: {
+                cellPadding: 3,
+                fontSize: 10,
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { cellWidth: 'auto' },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 35 },
+                3: { cellWidth: 'auto' },
+            },
+            didDrawPage: () => {
+              addFooter();
+            }
+        });
+      } else {
+         doc.setFontSize(12);
+         doc.setFont('helvetica', 'normal');
+         doc.text("No criteria were attempted for this project.", margin, summaryY);
+         addFooter();
+      }
+
 
       doc.save(`UltraCertify-${certificationStandard?.replace('_','-')}-Report.pdf`);
 
@@ -946,3 +1035,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
