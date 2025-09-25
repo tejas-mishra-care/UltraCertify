@@ -493,15 +493,15 @@ const nestCriteria: Criterion[] = [
         id: 'n-water-saving-fixtures',
         name: 'Water Saving Fixtures',
         type: 'Credit',
-        requirements: 'Provide efficient water fixtures: dual flush cistern for commode - 2 points, tap with aerators - 1 point, showers with aerators - 1 point, health faucet with aerators - 1 point.',
+        requirements: 'Provide efficient water fixtures.',
         documents: 'Photographs of fixtures.',
         points: 5,
         selectionType: 'multiple',
         options: [
-            { label: 'Dual flush cistern', points: 2 },
-            { label: 'Tap with aerators', points: 1 },
-            { label: 'Showers with aerators', points: 1 },
-            { label: 'Health faucet with aerators', points: 1 },
+            { label: 'Dual flush cistern (2 pts)', points: 2 },
+            { label: 'Tap with aerators (1 pt)', points: 1 },
+            { label: 'Showers with aerators (1 pt)', points: 1 },
+            { label: 'Health faucet with aerators (1 pt)', points: 1 },
         ]
     },
     {
@@ -537,6 +537,26 @@ const nestCriteria: Criterion[] = [
         requirements: 'Procure BEE / Energy Certified appliances.',
         documents: 'Photographs of appliances with star ratings.',
         points: { New: 5, Existing: 7 },
+        options: {
+            New: [
+                { label: '0 Credits', points: 0 },
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+                { label: '3 Credits', points: 3 },
+                { label: '4 Credits', points: 4 },
+                { label: '5 Credits', points: 5 },
+            ],
+            Existing: [
+                { label: '0 Credits', points: 0 },
+                { label: '1 Credit', points: 1 },
+                { label: '2 Credits', points: 2 },
+                { label: '3 Credits', points: 3 },
+                { label: '4 Credits', points: 4 },
+                { label: '5 Credits', points: 5 },
+                { label: '6 Credits', points: 6 },
+                { label: '7 Credits', points: 7 },
+            ]
+        }
     },
     {
         id: 'n-sunshades-chajjas',
@@ -562,7 +582,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-green-procurement',
         name: 'Green Procurement - Ecolabelled',
         type: 'Credit',
-        requirements: 'Use Green certified materials.',
+        requirements: "Use Green certified materials.",
         documents: 'Photos, cutsheets, and invoices.',
         points: { New: 5, Existing: 2 },
         options: {
@@ -718,4 +738,3 @@ export const certificationData: CertificationData = {
         }
     }
 };
-
