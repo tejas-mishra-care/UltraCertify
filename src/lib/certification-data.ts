@@ -414,6 +414,20 @@ const nestPlusCriteria: Criterion[] = [
     requirements: 'Achieve innovative and exemplary performance.',
     documents: 'Supporting proof documents.',
     points: { New: 5, Existing: 3 },
+    options: {
+      New: [
+        { label: '1 Credit', points: 1 },
+        { label: '2 Credits', points: 2 },
+        { label: '3 Credits', points: 3 },
+        { label: '4 Credits', points: 4 },
+        { label: '5 Credits', points: 5 },
+      ],
+      Existing: [
+        { label: '1 Credit', points: 1 },
+        { label: '2 Credits', points: 2 },
+        { label: '3 Credits', points: 3 },
+      ],
+    },
   },
   {
     id: 'np-igbc-ap',
@@ -476,7 +490,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-water-saving-fixtures',
         name: 'Water Saving Fixtures',
         type: 'Credit',
-        requirements: 'Provide efficient water fixtures: dual flush cristern for commode - 2 points, tap with aerators - 1 point, showers with aerators - 1 point, health faucet with aerators - 1 point.',
+        requirements: 'Provide efficient water fixtures: dual flush cistern for commode - 2 points, tap with aerators - 1 point, showers with aerators - 1 point, health faucet with aerators - 1 point.',
         documents: 'Photographs of fixtures.',
         points: 5,
         selectionType: 'multiple',
