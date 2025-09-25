@@ -73,6 +73,10 @@ const nestPlusCriteria: Criterion[] = [
     requirements: 'Access to at least five basic amenities within a 1 km walk.',
     documents: 'Google map showing the distance to amenities.',
     points: 2,
+    options: [
+        { label: 'Partial Amenities Met', points: 1 },
+        { label: 'All Amenities Met', points: 2 },
+    ]
   },
   {
     id: 'np-vegetation-natural-topography',
@@ -400,6 +404,7 @@ const nestPlusCriteria: Criterion[] = [
       { label: 'CCTV', points: 1 },
       { label: 'Solar meter', points: 1 },
       { label: 'Sensors', points: 1 },
+      { label: 'Others', points: 0 },
     ]
   },
   {
@@ -498,10 +503,10 @@ const nestCriteria: Criterion[] = [
         points: 5,
         selectionType: 'multiple',
         options: [
-            { label: 'Dual flush cistern (2 pts)', points: 2 },
-            { label: 'Tap with aerators (1 pt)', points: 1 },
-            { label: 'Showers with aerators (1 pt)', points: 1 },
-            { label: 'Health faucet with aerators (1 pt)', points: 1 },
+            { label: 'Dual flush cistern', points: 2 },
+            { label: 'Tap with aerators', points: 1 },
+            { label: 'Showers with aerators', points: 1 },
+            { label: 'Health faucet with aerators', points: 1 },
         ]
     },
     {
@@ -736,3 +741,5 @@ export const certificationData: CertificationData = {
         }
     }
 };
+
+    
