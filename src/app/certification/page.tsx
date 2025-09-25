@@ -27,6 +27,8 @@ import {
   Home,
   ChevronRight
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/auth-context";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -90,6 +92,16 @@ const UltraCertifyPage: FC = () => {
   const [step, setStep] = useState(1);
 
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
 
   const form = useForm<FormValues>({
     resolver: zodResolver(projectSchema),
@@ -307,11 +319,11 @@ const UltraCertifyPage: FC = () => {
       doc.line(margin, 28, pageWidth - margin, 28);
 
       let yPos = 38;
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('Project Details', margin, yPos);
-      yPos += 10;
-      doc.setFontSize(12);
+      yPos += 12;
+      doc.setFontSize(14);
 
       const details = [
         { label: 'Registration Number', value: projectDataForPdf.registrationNumber },
@@ -337,23 +349,23 @@ const UltraCertifyPage: FC = () => {
       details.forEach((detail, index) => {
         const currentX = index % 2 === 0 ? col1X : col2X;
         if (index > 0 && index % 2 === 0) {
-          detailY += 8;
+          detailY += 10;
         }
         doc.setFont('helvetica', 'bold');
         doc.text(`${detail.label}:`, currentX, detailY);
         doc.setFont('helvetica', 'normal');
-        doc.text(detail.value || '-', currentX + 55, detailY);
+        doc.text(detail.value || '-', currentX + 60, detailY);
       });
 
-      yPos = detailY + 18;
+      yPos = detailY + 22;
 
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text('Certification Summary', margin, yPos);
-      yPos += 10;
-      doc.setFontSize(14);
+      yPos += 12;
+      doc.setFontSize(16);
       doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
-      yPos += 10;
+      yPos += 12;
       doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
 
       addFooter();
@@ -508,6 +520,13 @@ const UltraCertifyPage: FC = () => {
     }
   };
 
+  if (loading || !user) {
+    return (
+        <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+    );
+  }
 
   const renderStep1 = () => (
       <Card className="max-w-2xl mx-auto">
@@ -900,4 +919,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
