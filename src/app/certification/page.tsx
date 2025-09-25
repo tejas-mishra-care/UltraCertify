@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { FC } from "react";
@@ -180,6 +181,14 @@ const UltraCertifyPage: FC = () => {
     if (Array.isArray(criterion.options)) return criterion.options;
     return buildingType ? criterion.options[buildingType] : undefined;
   }, [buildingType]);
+
+  const getCriterionRequirements = useCallback((criterion: Criterion): string => {
+    if (typeof criterion.requirements === 'string') {
+      return criterion.requirements;
+    }
+    return buildingType ? criterion.requirements[buildingType] : '';
+  }, [buildingType]);
+
 
   const getCriterionScore = useCallback((criterion: Criterion) => {
     if (criterion.type !== 'Credit' || !buildingType) return 0;
@@ -384,7 +393,7 @@ const UltraCertifyPage: FC = () => {
         };
 
         let bottomOfText = textY;
-        bottomOfText = addDetail('Requirements:', criterion.requirements, bottomOfText);
+        bottomOfText = addDetail('Requirements:', getCriterionRequirements(criterion), bottomOfText);
 
         let statusText = "Not Attempted";
         if (criterion.type === 'Credit' && buildingType) {
@@ -772,7 +781,7 @@ const UltraCertifyPage: FC = () => {
                       <AccordionContent>
                         <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-6 p-4">
                           <div className="flex-1 md:col-span-2 space-y-4">
-                            <p className="text-sm text-muted-foreground">{criterion.requirements}</p>
+                            <p className="text-sm text-muted-foreground">{getCriterionRequirements(criterion)}</p>
                             <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
 
                             {criterion.type === 'Credit' && (
@@ -891,3 +900,4 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+

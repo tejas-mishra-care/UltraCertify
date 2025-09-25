@@ -11,7 +11,7 @@ export type Criterion = {
   id: string;
   name: string;
   type: 'Mandatory' | 'Credit';
-  requirements: string;
+  requirements: string | Record<BuildingType, string>;
   documents: string;
   points: number | Record<BuildingType, number>;
   options?: CriterionOption[] | Record<BuildingType, CriterionOption[]>;
@@ -62,3 +62,4 @@ export type UploadedFile = {
   latitude?: number;
   longitude?: number;
 };
+

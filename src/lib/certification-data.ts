@@ -284,7 +284,10 @@ const nestPlusCriteria: Criterion[] = [
     id: 'np-green-procurement',
     name: 'Green Procurement - Ecolabelled',
     type: 'Credit',
-    requirements: 'Use Green certified materials (1 pt each, max 7 for new, max 2 for existing).',
+    requirements: {
+      New: 'Use Green certified materials (1 pt each, max 7).',
+      Existing: 'Use Green certified materials (1 pt each, max 2).'
+    },
     documents: 'Photos, cutsheets, and invoices.',
     points: { New: 7, Existing: 2 },
     options: {
@@ -715,3 +718,4 @@ export const certificationData: CertificationData = {
         }
     }
 };
+
