@@ -299,19 +299,19 @@ const UltraCertifyPage: FC = () => {
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
       doc.text('UltraCertify Report', pageWidth / 2, 15, { align: 'center' });
-      doc.setFontSize(12);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'normal');
       const reportTitle = `IGBC's ${certificationStandard?.replace('_', ' ')} - Green Building Certification Summary`;
       doc.text(reportTitle, pageWidth / 2, 22, { align: 'center' });
       doc.setLineWidth(0.5);
       doc.line(margin, 28, pageWidth - margin, 28);
 
-      let yPos = 35;
-      doc.setFontSize(16);
+      let yPos = 38;
+      doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text('Project Details', margin, yPos);
-      yPos += 8;
-      doc.setFontSize(10);
+      yPos += 10;
+      doc.setFontSize(12);
 
       const details = [
         { label: 'Registration Number', value: projectDataForPdf.registrationNumber },
@@ -337,23 +337,23 @@ const UltraCertifyPage: FC = () => {
       details.forEach((detail, index) => {
         const currentX = index % 2 === 0 ? col1X : col2X;
         if (index > 0 && index % 2 === 0) {
-          detailY += 7;
+          detailY += 8;
         }
         doc.setFont('helvetica', 'bold');
         doc.text(`${detail.label}:`, currentX, detailY);
         doc.setFont('helvetica', 'normal');
-        doc.text(detail.value || '-', currentX + 50, detailY);
+        doc.text(detail.value || '-', currentX + 55, detailY);
       });
 
-      yPos = detailY + 15;
+      yPos = detailY + 18;
 
-      doc.setFontSize(16);
+      doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text('Certification Summary', margin, yPos);
-      yPos += 8;
-      doc.setFontSize(12);
+      yPos += 10;
+      doc.setFontSize(14);
       doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
-      yPos += 8;
+      yPos += 10;
       doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
 
       addFooter();
