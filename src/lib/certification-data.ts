@@ -287,6 +287,21 @@ const nestPlusCriteria: Criterion[] = [
     requirements: 'Use Green certified materials (1 pt each, max 7 for new, max 2 for existing).',
     documents: 'Photos, cutsheets, and invoices.',
     points: { New: 7, Existing: 2 },
+    options: {
+        New: [
+            { label: '1 Credit', points: 1 },
+            { label: '2 Credits', points: 2 },
+            { label: '3 Credits', points: 3 },
+            { label: '4 Credits', points: 4 },
+            { label: '5 Credits', points: 5 },
+            { label: '6 Credits', points: 6 },
+            { label: '7 Credits', points: 7 },
+        ],
+        Existing: [
+            { label: '1 Credit', points: 1 },
+            { label: '2 Credits', points: 2 },
+        ]
+    }
   },
   {
     id: 'np-local-materials',
