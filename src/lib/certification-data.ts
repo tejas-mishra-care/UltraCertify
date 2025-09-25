@@ -493,7 +493,7 @@ const nestCriteria: Criterion[] = [
         id: 'n-water-saving-fixtures',
         name: 'Water Saving Fixtures',
         type: 'Credit',
-        requirements: 'Provide efficient water fixtures.',
+        requirements: 'Provide efficient water fixtures: dual flush cristern for commode -2 points tap with aerators - 1 point showers with aerators - 1 points health faucet with aerators - 1 point.',
         documents: 'Photographs of fixtures.',
         points: 5,
         selectionType: 'multiple',
@@ -539,7 +539,6 @@ const nestCriteria: Criterion[] = [
         points: { New: 5, Existing: 7 },
         options: {
             New: [
-                { label: '0 Credits', points: 0 },
                 { label: '1 Credit', points: 1 },
                 { label: '2 Credits', points: 2 },
                 { label: '3 Credits', points: 3 },
@@ -547,7 +546,6 @@ const nestCriteria: Criterion[] = [
                 { label: '5 Credits', points: 5 },
             ],
             Existing: [
-                { label: '0 Credits', points: 0 },
                 { label: '1 Credit', points: 1 },
                 { label: '2 Credits', points: 2 },
                 { label: '3 Credits', points: 3 },
