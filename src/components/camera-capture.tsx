@@ -83,10 +83,28 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isOpen, onOpenChan
                 },
                 (error) => {
                     console.error('Error getting location:', error);
+                    let title = "Location Error";
+                    let description = "Could not retrieve your location. Please check your device's location services.";
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            title = "Location Access Denied";
+                            description = "Please enable location permissions in your browser settings to use this feature.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            title = "Location Unavailable";
+                            description = "Your location could not be determined. Please try again in an area with a better signal.";
+                            break;
+                        case error.TIMEOUT:
+                            title = "Location Request Timed Out";
+                            description = "The request to get your location took too long. Please try again.";
+                            break;
+                    }
+
                     toast({
                         variant: 'destructive',
-                        title: 'Location Access Denied',
-                        description: 'Could not retrieve your location. Please enable location services.',
+                        title: title,
+                        description: description,
                     });
                     resolve(null);
                 },
@@ -115,7 +133,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ isOpen, onOpenChan
       }
       setIsCapturing(false);
     }
-  }, [onCapture, toast]);
+  }, [onCapture]);
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
