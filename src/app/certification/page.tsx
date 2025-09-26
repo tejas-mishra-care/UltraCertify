@@ -435,13 +435,13 @@ const UltraCertifyPage: FC = () => {
 
       // --- PAGE 1: Project Details ---
       if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', margin, 10, 30, 10);
+          doc.addImage(logoBase64, 'PNG', margin, 10, 36, 12); // width 120 -> 36, height 40 -> 12
       }
       if (shashwatBase64) {
-        doc.addImage(shashwatBase64, 'PNG', (pageWidth / 2) - 22.5, 10, 45, 15);
+          doc.addImage(shashwatBase64, 'PNG', (pageWidth / 2) - 27, 10, 54, 18); // width 180 -> 54, height 60 -> 18
       }
       if (utecBase64) {
-        doc.addImage(utecBase64, 'JPEG', pageWidth - margin - 30, 10, 30, 10);
+          doc.addImage(utecBase64, 'JPEG', pageWidth - margin - 36, 10, 36, 12); // width 120 -> 36, height 40 -> 12
       }
      
       doc.setLineWidth(0.5);
@@ -701,7 +701,7 @@ const UltraCertifyPage: FC = () => {
       }
 
 
-      doc.save(`UltraCertify-${certificationStandard?.replace('_','-')}-Report.pdf`);
+      doc.save(`UltraTech-shashwat-GREEN-HOME-CERTIFICATION-Report.pdf`);
 
     } catch (error) {
       console.error("Failed to generate PDF:", error);
