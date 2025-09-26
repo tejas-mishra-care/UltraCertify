@@ -451,42 +451,44 @@ const UltraCertifyPage: FC = () => {
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
       doc.text('Project Details', margin, yPos);
-      yPos += 12;
-      doc.setFontSize(16);
+      yPos += 2;
 
       const details = [
-        { label: 'Registration Number', value: projectDataForPdf.registrationNumber },
-        { label: 'Owner Name', value: projectDataForPdf.ownerName },
-        { label: 'Mobile Number', value: projectDataForPdf.mobileNumber },
-        { label: 'Email Address', value: projectDataForPdf.emailAddress },
-        { label: 'Building Type', value: projectDataForPdf.buildingType },
-        { label: 'Project Type', value: projectDataForPdf.projectType },
-        { label: 'Permission Authority', value: projectDataForPdf.permissionAuthority },
-        { label: 'Project Location', value: projectDataForPdf.projectLocation },
-        { label: 'Full Address', value: projectDataForPdf.fullAddress },
-        { label: 'Number of Floors', value: projectDataForPdf.numberOfFloors.toString() },
-        { label: 'Two Wheeler Parking', value: projectDataForPdf.twoWheelerParking.toString() },
-        { label: 'Total Site Area', value: `${projectDataForPdf.totalSiteArea} sq. m` },
-        { label: 'Total Built-up Area', value: `${projectDataForPdf.totalBuiltUpArea} sq. m` },
-        { label: 'Landscape Area', value: `${projectDataForPdf.landscapeArea} sq. m` },
+        ['Registration Number', projectDataForPdf.registrationNumber],
+        ['Owner Name', projectDataForPdf.ownerName],
+        ['Mobile Number', projectDataForPdf.mobileNumber],
+        ['Email Address', projectDataForPdf.emailAddress],
+        ['Building Type', projectDataForPdf.buildingType],
+        ['Project Type', projectDataForPdf.projectType],
+        ['Permission Authority', projectDataForPdf.permissionAuthority],
+        ['Project Location', projectDataForPdf.projectLocation],
+        ['Full Address', projectDataForPdf.fullAddress],
+        ['Number of Floors', projectDataForPdf.numberOfFloors.toString()],
+        ['Two Wheeler Parking', projectDataForPdf.twoWheelerParking.toString()],
+        ['Total Site Area', `${projectDataForPdf.totalSiteArea} sq. m`],
+        ['Total Built-up Area', `${projectDataForPdf.totalBuiltUpArea} sq. m`],
+        ['Landscape Area', `${projectDataForPdf.landscapeArea} sq. m`],
       ];
 
-      const col1X = margin;
-      const col2X = pageWidth / 2;
-      let detailY = yPos;
-
-      details.forEach((detail, index) => {
-        const currentX = index % 2 === 0 ? col1X : col2X;
-        if (index > 0 && index % 2 === 0) {
-          detailY += 12;
+      doc.autoTable({
+        body: details,
+        startY: yPos,
+        theme: 'plain',
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 60 },
+          1: { fontStyle: 'normal' },
+        },
+        didDrawPage: (data) => {
+            yPos = data.cursor?.y || yPos + 10;
         }
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${detail.label}:`, currentX, detailY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(detail.value || '-', currentX + 60, detailY);
       });
+      
 
-      yPos = detailY + 24;
+      yPos += 12;
 
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
@@ -1152,3 +1154,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
