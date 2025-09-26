@@ -55,7 +55,7 @@ export const AppHeader = () => {
         <Image
             src="/utec.jpeg"
             alt="UTEC Logo"
-            width={100}
+            width={150}
             height={50}
             priority
             className="object-contain"
