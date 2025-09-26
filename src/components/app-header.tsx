@@ -27,27 +27,39 @@ export const AppHeader = () => {
 
   return (
     <header className="flex justify-between items-center gap-4 bg-accent p-4 rounded-lg shadow-sm relative">
-      <Link href="/">
-        <Image
-          src="/ultratech-logo.png"
-          alt="UltraTech Logo"
-          width={200}
-          height={69}
-          priority
-          className="cursor-pointer"
-        />
-      </Link>
+      <div className="flex-1 flex justify-start">
+        <Link href="/">
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={150}
+            height={50}
+            priority
+            className="cursor-pointer object-contain"
+          />
+        </Link>
+      </div>
       
-      <div className="flex-1 text-center">
-        <span className="font-semibold text-xl text-accent-foreground">
-          UltraCertify
-        </span>
-        <p className="text-sm text-accent-foreground/80">
-          IGBC's NEST & NEST PLUS - Green Home Certification
-        </p>
+      <div className="flex-1 flex justify-center">
+        <Image
+            src="/shashwat.png"
+            alt="Shashwat Logo"
+            width={150}
+            height={50}
+            priority
+            className="object-contain"
+          />
       </div>
 
-      <div className="w-[200px] flex justify-end">
+      <div className="flex-1 flex justify-end items-center gap-4">
+        <Image
+            src="/utec.jpeg"
+            alt="UTEC Logo"
+            width={100}
+            height={50}
+            priority
+            className="object-contain"
+        />
         {!loading && user && (
            <div>
               <DropdownMenu>

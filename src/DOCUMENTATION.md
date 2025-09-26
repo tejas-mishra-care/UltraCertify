@@ -4,7 +4,7 @@ This document provides an overview of the UltraCertify application, its features
 
 ## 1. Project Overview
 
-UltraCertify is a web application designed to help users manage and track their green building certification process based on the **IGBC's NEST PLUS Ver 1.0** standard for individual green homes. It allows users to input project details, select their achieved credits, upload evidence, and generate a formal, branded PDF report summarizing their project's score and certification level.
+UltraCertify is a web application designed to help users manage and track their green building certification process based on the **IGBC's NEST & NEST PLUS** standards for individual green homes. It allows users to input project details, select their achieved credits, upload evidence, and generate a formal, branded PDF report summarizing their project's score and certification level.
 
 The application is fully responsive and designed with a **mobile-first** approach.
 
@@ -47,24 +47,15 @@ The application is fully responsive and designed with a **mobile-first** approac
     - The logic ensures that the points for any single criterion cannot exceed its defined maximum, even if multiple checkbox options are selected.
     - The progress bar and the certification level (e.g., 'Certified', 'Silver', 'Gold') update instantly based on the current total score.
 
-### e. AI-Powered Credit Suggestions
-
-- **Location:** "Actions" card in the right-hand sidebar.
-- **Functionality:** The "Suggest Applicable Credits" button uses AI to analyze the uploaded images and suggest other credits the user might be eligible for.
-- **How it Works:**
-    - When clicked, all uploaded images are sent to a backend Genkit AI flow.
-    - The AI analyzes the visual content (e.g., detects solar panels, rainwater harvesting systems) and returns a list of suggested criteria IDs.
-    - These suggestions are displayed to the user in a pop-up dialog.
-
-### f. Branded PDF Report Generation
+### e. Branded PDF Report Generation
 
 - **Location:** "Actions" card in the right-hand sidebar.
 - **Functionality:** The "Generate PDF Report" button creates a comprehensive, print-friendly summary of the project.
 - **How it Works:**
     - This feature uses the `jsPDF` library to programmatically generate a high-quality, multi-page PDF directly in the browser.
     - The report is generated in **landscape (horizontal) orientation** for better readability.
-    - **Branding:** The report header prominently features the **UltraTech Cement logo** and a professional title.
-    - **Comprehensive Details:** The first page includes a full summary of all project details and the final certification score.
+    - **Branding:** The report header prominently features the **project logos** and a professional title.
+    - **Comprehensive Details:** The first page includes a full summary of all project details and the final certification score. The second page displays a full-page promotional image. The third page contains a summary table of all attempted criteria.
     - **One Criterion Per Page:** Each subsequent page is dedicated to a single applicable criterion, displaying:
         - A large, highlighted title with the criterion name.
         - All relevant details: requirements, points awarded vs. max points, and status (e.g., "Achieved", "Not Attempted").
@@ -84,8 +75,7 @@ The project is built with Next.js (App Router). Here are the key files and direc
 - **`src/lib/`**: Contains shared logic, data, and type definitions.
     - `certification-data.ts`: This is a crucial file that holds the master list of all IGBC criteria, their points, applicability, and selectable options for dropdowns/checkboxes.
     - `types.ts`: Defines the TypeScript data structures used throughout the app (e.g., `Criterion`, `ProjectData`).
-- **`public/ultratech-logo.png`**: The official brand logo used in the UI and the PDF report.
-- **`src/ai/` & `src/app/actions.ts`**: These files manage the backend Genkit AI flow for credit suggestions.
+- **`public/`**: Contains all static assets like logos and images.
 
 ---
 

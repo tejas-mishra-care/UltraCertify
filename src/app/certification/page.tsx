@@ -26,7 +26,8 @@ import {
   Bike,
   Star,
   Home,
-  ChevronRight
+  ChevronRight,
+  Sheet
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
@@ -65,6 +66,13 @@ import type { UploadedFile, Criterion, CriterionOption, BuildingType, StandardDa
 import { ImageUploader } from "@/components/image-uploader";
 import { Textarea } from "@/components/ui/textarea";
 import dynamic from "next/dynamic";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Extend jsPDF with autoTable
 interface jsPDFWithAutoTable extends jsPDF {
@@ -90,6 +98,17 @@ const projectSchema = z.object({
 });
 
 type FormValues = z.infer<typeof projectSchema>;
+
+// URLs for the Google Sheets
+const annexureUrls: Record<string, string> = {
+  'np-daylighting': 'YOUR_GOOGLE_SHEET_URL_FOR_DAYLIGHTING',
+  'n-daylighting': 'YOUR_GOOGLE_SHEET_URL_FOR_DAYLIGHTING',
+  'np-ventilation': 'YOUR_GOOGLE_SHEET_URL_FOR_VENTILATION',
+  'n-ventilation': 'YOUR_GOOGLE_SHEET_URL_FOR_VENTILATION',
+  'np-basic-amenities': 'YOUR_GOOGLE_SHEET_URL_FOR_BASIC_AMENITIES',
+  'np-local-materials': 'YOUR_GOOGLE_SHEET_URL_FOR_LOCAL_MATERIALS',
+};
+
 
 const UltraCertifyPage: FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
@@ -285,17 +304,41 @@ const UltraCertifyPage: FC = () => {
     return { currentScore: score, maxScore: max, progress: prog, certificationLevel: level };
   }, [selectedStandardData, getCriterionScore]);
 
-  const getBase64Image = (img: HTMLImageElement): string => {
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(img, 0, 0);
-      const dataURL = canvas.toDataURL("image/png");
-      return dataURL;
-    }
-    return '';
+  const getBase64Image = (img: HTMLImageElement): Promise<string> => {
+     return new Promise((resolve, reject) => {
+        // If the image is already loaded and has a source, we can use it directly
+        if (img.complete && img.naturalHeight !== 0) {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const dataURL = canvas.toDataURL("image/png");
+                resolve(dataURL);
+            } else {
+                reject(new Error("Could not get canvas context."));
+            }
+        } else {
+            // If the image is not loaded yet, we wait for it
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0);
+                    const dataURL = canvas.toDataURL("image/png");
+                    resolve(dataURL);
+                } else {
+                    reject(new Error("Could not get canvas context."));
+                }
+            };
+            img.onerror = () => {
+                reject(new Error("Image could not be loaded."));
+            };
+        }
+     });
   };
 
   const getStatusText = (criterion: Criterion): string => {
@@ -351,18 +394,27 @@ const UltraCertifyPage: FC = () => {
       const margin = 15;
       let pageCount = 1;
 
-      // --- Load Logo ---
-      let ultratechLogoBase64 = '';
-      try {
-        const logoImg = new window.Image();
-        logoImg.src = '/ultratech-logo.png';
-        await new Promise((resolve, reject) => {
-          logoImg.onload = resolve;
-          logoImg.onerror = reject;
+      // --- Load Logos ---
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+            const img = new window.Image();
+            img.src = src;
+            img.onload = () => resolve(img);
+            img.onerror = reject;
         });
-        ultratechLogoBase64 = getBase64Image(logoImg);
+      };
+      
+      let logoBase64 = '';
+      let homeImageBase64 = '';
+
+      try {
+        const logoImg = await loadImage('/logo.png');
+        logoBase64 = await getBase64Image(logoImg);
+
+        const homeImg = await loadImage('/home.jpeg');
+        homeImageBase64 = await getBase64Image(homeImg);
       } catch (e) {
-        console.error("Could not load logo image for PDF.", e);
+        console.error("Could not load images for PDF.", e);
       }
 
       const addFooter = () => {
@@ -372,8 +424,9 @@ const UltraCertifyPage: FC = () => {
         doc.text(`Page ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
       };
 
-      if (ultratechLogoBase64) {
-        doc.addImage(ultratechLogoBase64, 'PNG', margin, 10, 40, 15);
+      // --- PAGE 1: Project Details ---
+      if (logoBase64) {
+        doc.addImage(logoBase64, 'PNG', margin, 10, 40, 15);
       }
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
@@ -437,7 +490,35 @@ const UltraCertifyPage: FC = () => {
 
       addFooter();
 
-      // --- Summary Table Page ---
+      // --- PAGE 2: Home Image ---
+      doc.addPage();
+      pageCount++;
+      if (homeImageBase64) {
+          const imgProps = doc.getImageProperties(homeImageBase64);
+          const imgWidth = imgProps.width;
+          const imgHeight = imgProps.height;
+          const ratio = imgWidth / imgHeight;
+
+          const availableWidth = pageWidth - margin * 2;
+          const availableHeight = pageHeight - margin * 2;
+          
+          let finalWidth = availableWidth;
+          let finalHeight = availableWidth / ratio;
+          
+          if (finalHeight > availableHeight) {
+              finalHeight = availableHeight;
+              finalWidth = availableHeight * ratio;
+          }
+
+          const x = (pageWidth - finalWidth) / 2;
+          const y = (pageHeight - finalHeight) / 2;
+          
+          doc.addImage(homeImageBase64, 'JPEG', x, y, finalWidth, finalHeight);
+      }
+      addFooter();
+
+
+      // --- PAGE 3: Summary Table ---
       doc.addPage();
       pageCount++;
       let summaryY = margin;
@@ -476,7 +557,7 @@ const UltraCertifyPage: FC = () => {
             body: tableData,
             startY: summaryY,
             headStyles: {
-                fillColor: [34, 41, 47], // A dark grey color for header
+                fillColor: [34, 41, 47], 
                 textColor: [255, 255, 255],
                 fontStyle: 'bold'
             },
@@ -506,8 +587,9 @@ const UltraCertifyPage: FC = () => {
       for (const criterion of selectedStandardData.criteria) {
         const selection = selectedOptions[criterion.id];
         const files = uploadedFiles[criterion.id] || [];
+        const statusText = getStatusText(criterion);
 
-        if (!selection && files.length === 0) continue;
+        if (statusText === 'Not Attempted') continue;
 
         doc.addPage();
         pageCount++;
@@ -540,8 +622,6 @@ const UltraCertifyPage: FC = () => {
         let bottomOfText = textY;
         bottomOfText = addDetail('Requirements:', getCriterionRequirements(criterion), bottomOfText);
 
-        const statusText = getStatusText(criterion);
-        
         if (criterion.type === 'Credit' && buildingType) {
           const criterionScore = getCriterionScore(criterion);
           const pointsConfig = criterion.points;
@@ -902,6 +982,7 @@ const UltraCertifyPage: FC = () => {
                   const pointsConfig = criterion.points;
                   const maxPoints = typeof pointsConfig === 'number' ? pointsConfig : (buildingType ? pointsConfig[buildingType as BuildingType] : 0);
                   const selection = selectedOptions[criterion.id] as string[] || [];
+                  const hasAnnexure = !!annexureUrls[criterion.id];
 
                   return (
                     <AccordionItem value={criterion.id} key={criterion.id}>
@@ -922,73 +1003,99 @@ const UltraCertifyPage: FC = () => {
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-6 p-4">
-                          <div className="flex-1 md:col-span-2 space-y-4">
-                            <p className="text-sm text-muted-foreground">{getCriterionRequirements(criterion)}</p>
-                            <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
+                        <div className="space-y-4 p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-6">
+                            <div className="flex-1 md:col-span-2 space-y-4">
+                              <p className="text-sm text-muted-foreground">{getCriterionRequirements(criterion)}</p>
+                              <p className="text-sm text-muted-foreground"><strong>Documents:</strong> {criterion.documents}</p>
 
-                            {criterion.type === 'Credit' && (
-                              <>
-                                {!options && (
-                                  <div className="flex items-center space-x-2 pt-2">
-                                    <Checkbox
-                                      id={`${criterion.id}-achieved`}
-                                      checked={selectedOptions[criterion.id] === 'true'}
-                                      onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
-                                    />
-                                    <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
-                                  </div>
-                                )}
+                              {criterion.type === 'Credit' && (
+                                <>
+                                  {!options && (
+                                    <div className="flex items-center space-x-2 pt-2">
+                                      <Checkbox
+                                        id={`${criterion.id}-achieved`}
+                                        checked={selectedOptions[criterion.id] === 'true'}
+                                        onCheckedChange={(checked) => handleOptionChange(criterion.id, checked ? 'true' : 'false')}
+                                      />
+                                      <Label htmlFor={`${criterion.id}-achieved`}>Achieved</Label>
+                                    </div>
+                                  )}
 
-                                {options && criterion.selectionType !== 'multiple' && (
-                                  <div className="pt-2">
-                                    <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
-                                      <SelectTrigger className="w-full md:w-[280px]">
-                                        <SelectValue placeholder="Select achieved level..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
-                                        {options.map(opt => (
-                                          <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
+                                  {options && criterion.selectionType !== 'multiple' && (
+                                    <div className="pt-2">
+                                      <Select onValueChange={(value) => handleOptionChange(criterion.id, value)} value={selectedOptions[criterion.id] as string || 'none'}>
+                                        <SelectTrigger className="w-full md:w-[280px]">
+                                          <SelectValue placeholder="Select achieved level..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none">Not Achieved (0 pts)</SelectItem>
+                                          {options.map(opt => (
+                                            <SelectItem key={opt.label} value={opt.label}>{opt.label} ({opt.points} pts)</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
 
-                                {options && criterion.selectionType === 'multiple' && (
-                                  <div className="pt-2 space-y-2">
-                                    {options.map(opt => (
-                                      <div key={opt.label} className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={`${criterion.id}-${opt.label}`}
-                                          checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
-                                          onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
-                                        />
-                                        <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} {opt.points > 0 ? `(${opt.points} pts)` : ''}</Label>
-                                      </div>
-                                    ))}
-                                    {selection.includes('Others') && (
-                                        <div className="pt-2 pl-6">
-                                            <Label htmlFor={`${criterion.id}-others-details`}>Please specify other automation:</Label>
-                                            <Textarea
-                                                id={`${criterion.id}-others-details`}
-                                                placeholder="e.g., Smart blinds, voice assistant integration"
-                                                value={otherAutomationDetails[criterion.id] || ''}
-                                                onChange={(e) => handleOtherAutomationChange(criterion.id, e.target.value)}
-                                                className="mt-1"
-                                            />
+                                  {options && criterion.selectionType === 'multiple' && (
+                                    <div className="pt-2 space-y-2">
+                                      {options.map(opt => (
+                                        <div key={opt.label} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`${criterion.id}-${opt.label}`}
+                                            checked={(selectedOptions[criterion.id] as string[] || []).includes(opt.label)}
+                                            onCheckedChange={(checked) => handleCheckboxChange(criterion.id, opt.label, !!checked)}
+                                          />
+                                          <Label htmlFor={`${criterion.id}-${opt.label}`}>{opt.label} {opt.points > 0 ? `(${opt.points} pts)` : ''}</Label>
                                         </div>
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            )}
+                                      ))}
+                                      {selection.includes('Others') && (
+                                          <div className="pt-2 pl-6">
+                                              <Label htmlFor={`${criterion.id}-others-details`}>Please specify other automation:</Label>
+                                              <Textarea
+                                                  id={`${criterion.id}-others-details`}
+                                                  placeholder="e.g., Smart blinds, voice assistant integration"
+                                                  value={otherAutomationDetails[criterion.id] || ''}
+                                                  onChange={(e) => handleOtherAutomationChange(criterion.id, e.target.value)}
+                                                  className="mt-1"
+                                              />
+                                          </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            <ImageUploader
+                              criterionId={criterion.id}
+                              onFileChange={handleFileChange}
+                            />
                           </div>
-                          <ImageUploader
-                            criterionId={criterion.id}
-                            onFileChange={handleFileChange}
-                          />
+                           {hasAnnexure && (
+                              <div className="mt-4">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline">
+                                      <Sheet className="mr-2 h-4 w-4" /> Open Annexure
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl h-[90vh]">
+                                    <DialogHeader>
+                                      <DialogTitle>Annexure for {criterion.name}</DialogTitle>
+                                    </DialogHeader>
+                                    <p className="text-sm text-muted-foreground">Please fill out the sheet below. Note: This data is for your reference and will not be automatically saved or included in the PDF report.</p>
+                                    <iframe
+                                      src={annexureUrls[criterion.id]}
+                                      className="w-full h-full border-0"
+                                      title={`Annexure for ${criterion.name}`}
+                                    >
+                                      Loading spreadsheet...
+                                    </iframe>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                            )}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -1055,4 +1162,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
- 
