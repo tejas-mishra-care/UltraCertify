@@ -490,35 +490,7 @@ const UltraCertifyPage: FC = () => {
 
       addFooter();
 
-      // --- PAGE 2: Home Image ---
-      doc.addPage();
-      pageCount++;
-      if (homeImageBase64) {
-          const imgProps = doc.getImageProperties(homeImageBase64);
-          const imgWidth = imgProps.width;
-          const imgHeight = imgProps.height;
-          const ratio = imgWidth / imgHeight;
-
-          const availableWidth = pageWidth - margin * 2;
-          const availableHeight = pageHeight - margin * 2;
-          
-          let finalWidth = availableWidth;
-          let finalHeight = availableWidth / ratio;
-          
-          if (finalHeight > availableHeight) {
-              finalHeight = availableHeight;
-              finalWidth = availableHeight * ratio;
-          }
-
-          const x = (pageWidth - finalWidth) / 2;
-          const y = (pageHeight - finalHeight) / 2;
-          
-          doc.addImage(homeImageBase64, 'JPEG', x, y, finalWidth, finalHeight);
-      }
-      addFooter();
-
-
-      // --- PAGE 3: Summary Table ---
+      // --- PAGE 2: Summary Table ---
       doc.addPage();
       pageCount++;
       let summaryY = margin;
@@ -675,7 +647,7 @@ const UltraCertifyPage: FC = () => {
               doc.addImage(file.dataURL, imageType, xPos, imageY, finalWidth, finalHeight);
               
               let textY = imageY + finalHeight + 5;
-              doc.setFontSize(8);
+              doc.setFontSize(10);
               
               if (file.description) {
                 doc.setFont('helvetica', 'italic');
@@ -1162,3 +1134,5 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
+
+    
