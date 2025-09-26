@@ -406,11 +406,19 @@ const UltraCertifyPage: FC = () => {
       };
       
       let logoBase64 = '';
+      let shashwatBase64 = '';
+      let utecBase64 = '';
       let homeImageBase64 = '';
 
       try {
         const logoImg = await loadImage('/logo.png');
         logoBase64 = await getBase64Image(logoImg);
+
+        const shashwatImg = await loadImage('/shashwat.png');
+        shashwatBase64 = await getBase64Image(shashwatImg);
+
+        const utecImg = await loadImage('/utec.jpeg');
+        utecBase64 = await getBase64Image(utecImg);
 
         const homeImg = await loadImage('/home.jpeg');
         homeImageBase64 = await getBase64Image(homeImg);
@@ -427,15 +435,15 @@ const UltraCertifyPage: FC = () => {
 
       // --- PAGE 1: Project Details ---
       if (logoBase64) {
-        doc.addImage(logoBase64, 'PNG', margin, 10, 40, 15);
+        doc.addImage(logoBase64, 'PNG', margin, 10, 30, 10);
       }
-      doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
-      doc.text('UltraTech shashwat GREEN HOME CERTIFICATION', pageWidth / 2, 15, { align: 'center' });
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      const reportTitle = `IGBC's ${certificationStandard?.replace('_', ' ')} - Green Building Certification Summary`;
-      doc.text(reportTitle, pageWidth / 2, 22, { align: 'center' });
+      if (shashwatBase64) {
+        doc.addImage(shashwatBase64, 'PNG', (pageWidth / 2) - 22.5, 10, 45, 15);
+      }
+      if (utecBase64) {
+        doc.addImage(utecBase64, 'JPEG', pageWidth - margin - 30, 10, 30, 10);
+      }
+     
       doc.setLineWidth(0.5);
       doc.line(margin, 28, pageWidth - margin, 28);
 
@@ -568,7 +576,6 @@ const UltraCertifyPage: FC = () => {
 
       // --- Individual Criterion Pages ---
       for (const criterion of selectedStandardData.criteria) {
-        const selection = selectedOptions[criterion.id];
         const files = uploadedFiles[criterion.id] || [];
         const statusText = getStatusText(criterion);
 

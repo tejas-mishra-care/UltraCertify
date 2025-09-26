@@ -61,9 +61,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
   
   const handleDescriptionChange = (index: number, description: string) => {
     const updatedFiles = [...uploadedFiles];
-    updatedFiles[index].description = description;
-    setUploadedFiles(updatedFiles);
-    onFileChange(criterionId, updatedFiles);
+    if(updatedFiles[index]) {
+      updatedFiles[index].description = description;
+      setUploadedFiles(updatedFiles);
+      onFileChange(criterionId, updatedFiles);
+    }
   };
 
   useEffect(() => {

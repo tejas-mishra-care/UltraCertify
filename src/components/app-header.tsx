@@ -32,8 +32,8 @@ export const AppHeader = () => {
           <Image
             src="/logo.png"
             alt="Logo"
-            width={75}
-            height={25}
+            width={100}
+            height={33}
             priority
             className="cursor-pointer object-contain"
           />
@@ -55,8 +55,8 @@ export const AppHeader = () => {
         <Image
             src="/utec.jpeg"
             alt="UTEC Logo"
-            width={75}
-            height={25}
+            width={100}
+            height={33}
             priority
             className="object-contain"
         />
