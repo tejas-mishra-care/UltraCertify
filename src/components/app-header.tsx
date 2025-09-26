@@ -26,8 +26,8 @@ export const AppHeader = () => {
   };
 
   return (
-    <header className="flex justify-between items-center gap-4 bg-accent p-4 rounded-lg shadow-sm relative">
-      <div className="flex-1 flex justify-start">
+    <header className="flex flex-col md:flex-row justify-between items-center gap-4 bg-accent p-4 rounded-lg shadow-sm relative">
+      <div className="w-full md:flex-1 flex justify-center md:justify-start">
         <Link href="/">
           <Image
             src="/logo.png"
@@ -40,7 +40,7 @@ export const AppHeader = () => {
         </Link>
       </div>
       
-      <div className="flex-1 flex justify-center">
+      <div className="w-full md:flex-1 flex justify-center">
         <Image
             src="/shashwat.png"
             alt="Shashwat Logo"
@@ -51,7 +51,7 @@ export const AppHeader = () => {
           />
       </div>
 
-      <div className="flex-1 flex justify-end items-center gap-4">
+      <div className="w-full md:flex-1 flex justify-center md:justify-end items-center gap-4">
         <Image
             src="/utec.jpeg"
             alt="UTEC Logo"
@@ -61,7 +61,7 @@ export const AppHeader = () => {
             className="object-contain"
         />
         {!loading && user && (
-           <div>
+           <div className="absolute top-4 right-4 md:static">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="rounded-full">
