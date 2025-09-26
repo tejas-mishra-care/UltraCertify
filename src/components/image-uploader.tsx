@@ -14,11 +14,11 @@ import { Textarea } from './ui/textarea';
 
 interface ImageUploaderProps {
   criterionId: string;
+  files: UploadedFile[];
   onFileChange: (criterionId: string, file: UploadedFile[] | null) => void;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFileChange }) => {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, files: uploadedFiles, onFileChange }) => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   const fileToDataURL = (file: File): Promise<string> => {
@@ -38,7 +38,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     });
     const newFiles = await Promise.all(newFilesPromises);
     const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles(updatedFiles);
     onFileChange(criterionId, updatedFiles);
   }, [criterionId, onFileChange, uploadedFiles]);
 
@@ -55,7 +54,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
       URL.revokeObjectURL(fileToRemove.preview);
     }
     const updatedFiles = uploadedFiles.filter((_, i) => i !== index);
-    setUploadedFiles(updatedFiles);
     onFileChange(criterionId, updatedFiles.length > 0 ? updatedFiles : null);
   };
   
@@ -63,14 +61,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
     const updatedFiles = [...uploadedFiles];
     if(updatedFiles[index]) {
       updatedFiles[index].description = description;
-      setUploadedFiles(updatedFiles);
       onFileChange(criterionId, updatedFiles);
     }
   };
 
   useEffect(() => {
     return () => {
-      uploadedFiles.forEach(file => URL.revokeObjectURL(file.preview));
+      uploadedFiles.forEach(file => {
+        if (file.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(file.preview)
+        }
+      });
     };
   }, [uploadedFiles]);
 
@@ -95,7 +96,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ criterionId, onFil
         longitude: location?.longitude
     };
     const updatedFiles = [...uploadedFiles, newFile];
-    setUploadedFiles(updatedFiles);
     onFileChange(criterionId, updatedFiles);
     setIsCameraOpen(false);
   }

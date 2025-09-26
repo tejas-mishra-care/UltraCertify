@@ -1061,6 +1061,7 @@ const UltraCertifyPage: FC = () => {
                             </div>
                             <ImageUploader
                               criterionId={criterion.id}
+                              files={uploadedFiles[criterion.id] || []}
                               onFileChange={handleFileChange}
                             />
                           </div>
