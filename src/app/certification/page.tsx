@@ -494,7 +494,7 @@ const UltraCertifyPage: FC = () => {
       doc.setFont('helvetica', 'bold');
       doc.text('Certification Summary', margin, yPos);
       yPos += 14;
-      doc.setFontSize(18);
+      doc.setFontSize(20);
       doc.text(`Total Score Achieved: ${currentScore} / ${maxScore}`, margin, yPos);
       yPos += 14;
       doc.text(`Certification Level Attained: ${certificationLevel.level}`, margin, yPos);
@@ -1154,5 +1154,3 @@ const UltraCertifyPage: FC = () => {
 };
 
 export default UltraCertifyPage;
-
-    
