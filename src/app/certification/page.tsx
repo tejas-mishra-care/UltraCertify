@@ -556,7 +556,7 @@ const UltraCertifyPage: FC = () => {
             },
             styles: {
                 cellPadding: 3,
-                fontSize: 9,
+                fontSize: 10,
                 valign: 'middle'
             },
             columnStyles: {
