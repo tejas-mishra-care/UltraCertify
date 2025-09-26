@@ -7,7 +7,7 @@ import { AppHeader } from '@/components/app-header';
 
 
 export const metadata: Metadata = {
-  title: 'UltraCertify',
+  title: 'UltraTech shashwat GREEN HOME CERTIFICATION',
   description: 'Green Building Certification Tool',
 };
 
