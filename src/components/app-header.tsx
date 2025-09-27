@@ -28,12 +28,12 @@ export const AppHeader = () => {
   return (
     <header className="flex flex-row justify-between items-center gap-4 bg-accent p-4 rounded-lg shadow-sm relative">
       <div className="w-1/4 flex justify-start">
-        <Link href="/">
+        <Link href="/dashboard">
           <Image
             src="/logo.png"
             alt="Logo"
-            width={120}
-            height={40}
+            width={100}
+            height={33}
             priority
             className="cursor-pointer object-contain"
           />
@@ -55,8 +55,8 @@ export const AppHeader = () => {
         <Image
             src="/utec.jpeg"
             alt="UTEC Logo"
-            width={120}
-            height={40}
+            width={100}
+            height={33}
             priority
             className="object-contain"
         />
@@ -73,7 +73,7 @@ export const AppHeader = () => {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                    <DropdownMenuItem asChild>
-                    <Link href="/">
+                    <Link href="/dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       <span>Dashboard</span>
                     </Link>
