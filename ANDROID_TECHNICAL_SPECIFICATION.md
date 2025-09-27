@@ -1,4 +1,3 @@
-
 # Technical Specification for UltraCertify Native Android App
 
 ## 1. High-Level Project Overview
