@@ -31,7 +31,7 @@ if (!getApps().length) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
-// Set authentication persistence
+// Set authentication persistence to be local
 setPersistence(auth, browserLocalPersistence);
 
 
